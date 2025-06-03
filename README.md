@@ -40,7 +40,7 @@ cd gemma-fine-tuning-ui
 1. Start the application:
 
 ```bash
-streamlit run app/main.py
+streamlit run app/Home.py
 ```
 
 2. Open your browser and navigate to `http://localhost:8501`

@@ -37,10 +37,22 @@ def show_create_model():
         ["HuggingFace Dataset", "TensorFlow Dataset", "Custom JSON Upload"],
     )
 
-    data_config = {}
+    # Common data options
+    data_config = {
+        "shuffle": st.checkbox(
+            "Shuffle Dataset",
+            value=True,
+            help="Whether to shuffle the dataset before training"
+        )
+    }
+
     if data_source == "HuggingFace Dataset":
         data_config["org"] = st.text_input("Organization/User Name")
         data_config["dataset_name"] = st.text_input("Dataset Name")
+        data_config["split"] = st.text_input(
+            "Split (e.g., 'train', 'train[:80%]', 'train[80%:]')",
+            help="Optional: Specify dataset split. Leave empty for default 'train' split."
+        )
         if data_config["org"] and data_config["dataset_name"]:
             st.info(
                 f"Will load dataset from: {data_config['org']}/{data_config['dataset_name']}"
@@ -48,6 +60,10 @@ def show_create_model():
 
     elif data_source == "TensorFlow Dataset":
         data_config["dataset_name"] = st.text_input("TensorFlow Dataset Name")
+        data_config["split"] = st.text_input(
+            "Split (e.g., 'train', 'train[:80%]', 'train[80%:]')",
+            help="Optional: Specify dataset split. Leave empty for default 'train' split."
+        )
         if data_config["dataset_name"]:
             st.info(f"Will load dataset: {data_config['dataset_name']}")
 

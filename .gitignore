@@ -31,6 +31,9 @@ poetry.lock
 # VSCode
 .vscode/
 
+# Data
+data/
+
 # testing scripts/notebooks
 example/
 notebooks/
