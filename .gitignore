@@ -1,7 +1,36 @@
+# Environment
 .env
 .venv
-*.csv
-.DS_Store
-__pycache__
+
+# Compiled python modules.
 *.pyc
-.DS_Store
+
+# Byte-compiled
+_pycache__/
+.cache/
+
+# Poetry, setuptools, PyPI distribution artifacts.
+/*.egg-info
+.eggs/
+build/
+dist/
+poetry.lock
+
+# Tests
+.pytest_cache/
+
+# Type checking
+.pytype/
+
+# Other
+*.DS_Store
+
+# PyCharm
+.idea
+
+# VSCode
+.vscode/
+
+# testing scripts/notebooks
+example/
+notebooks/
