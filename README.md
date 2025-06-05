@@ -12,7 +12,7 @@ A user-friendly web interface for fine-tuning Google DeepMind's Gemma models, de
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.8+ (Python 3.13 doesn't support kauldron)
 - CUDA-compatible GPU (recommended)
 
 ## Installation

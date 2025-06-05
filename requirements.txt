@@ -1,11 +1,9 @@
 streamlit
 pandas
 numpy
-matplotlib
-seaborn
 plotly
-scikit-learn
 requests
 jax
 jax[cuda12]
 gemma
+datasets
