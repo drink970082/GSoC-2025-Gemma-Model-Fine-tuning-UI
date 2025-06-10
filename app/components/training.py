@@ -24,6 +24,7 @@ def show_training():
             st.session_state.training_active = False
             st.warning("Training aborted!")
             st.session_state.page = "home"
+            st.session_state.current_model = None
             st.rerun()
 
         # Clear previous training data
