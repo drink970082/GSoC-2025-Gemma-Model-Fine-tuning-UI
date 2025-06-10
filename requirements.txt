@@ -6,3 +6,6 @@ seaborn
 plotly
 scikit-learn
 requests
+jax
+jax[cuda12]
+gemma
