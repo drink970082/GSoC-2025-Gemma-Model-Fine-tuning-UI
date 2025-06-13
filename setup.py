@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="gemma-fine-tuning-ui",
+    name="gemma_fine_tuning_ui",
     version="0.1.0",
     description="A UI for fine-tuning Gemma models",
     author="Chen-Hao Wu",

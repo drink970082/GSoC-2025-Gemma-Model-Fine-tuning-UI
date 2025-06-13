@@ -34,6 +34,7 @@ cd gemma-fine-tuning-ui
    # Project Dependencies
    pip install requirements.txt
    ```
+4. To utilize GPU training, you may need to install cuda toolkit and cuDNN. Follow the instructions on [Tensorflow website](https://www.tensorflow.org/install/gpu)
 
 ## Usage
 

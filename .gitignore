@@ -37,3 +37,15 @@ data/
 # testing scripts/notebooks
 example/
 notebooks/
+
+# logs
+*.log
+
+# lock files
+*.lock
+
+# model artifacts
+*.pt
+
+# tensorboard logs
+tensorboard_logs/
