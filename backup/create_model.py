@@ -1,11 +1,13 @@
 import json
 import tempfile
 
+import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import treescope
 
 from backend.data_pipeline import create_pipeline
+from config.model_info import FINE_TUNING_METHODS, MODEL_INFO, TASK_TYPES
 
 
 def show_model_name_section():
@@ -21,32 +23,52 @@ def show_fine_tuning_method_section():
     """Display the fine-tuning method selection and parameters."""
     method = st.radio(
         "Select Fine-tuning Method",
-        ["Standard", "LoRA", "DPO"],
+        list(FINE_TUNING_METHODS.keys()),
         help="Choose the fine-tuning approach based on your needs",
         horizontal=True,
     )
 
+    # Show method description
+    st.info(FINE_TUNING_METHODS[method]["description"])
+
+    # Show advantages and disadvantages
+    with st.expander("Method Details"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Advantages:**")
+            for adv in FINE_TUNING_METHODS[method]["advantages"]:
+                st.markdown(f"- {adv}")
+        with col2:
+            st.markdown("**Disadvantages:**")
+            for dis in FINE_TUNING_METHODS[method]["disadvantages"]:
+                st.markdown(f"- {dis}")
     method_params = {}
     if method == "LoRA":
         st.markdown("#### LoRA Parameters")
+        lora_params = FINE_TUNING_METHODS["LoRA"]["parameters"]
         method_params["lora_rank"] = st.number_input(
             "LoRA Rank",
             1,
             32,
-            8,
-            help="Rank of the LoRA update matrices (higher = more capacity)",
+            lora_params["lora_rank"]["default"],
+            help=lora_params["lora_rank"]["description"],
         )
         method_params["lora_alpha"] = st.number_input(
-            "LoRA Alpha", 1, 32, 16, help="Alpha parameter for LoRA scaling"
+            "LoRA Alpha",
+            1,
+            32,
+            lora_params["lora_alpha"]["default"],
+            help=lora_params["lora_alpha"]["description"],
         )
     elif method == "DPO":
         st.markdown("#### DPO Parameters")
+        dpo_params = FINE_TUNING_METHODS["DPO"]["parameters"]
         method_params["dpo_beta"] = st.number_input(
             "DPO Beta",
             0.1,
             1.0,
-            0.1,
-            help="Temperature parameter for DPO (higher = more exploration)",
+            dpo_params["dpo_beta"]["default"],
+            help=dpo_params["dpo_beta"]["description"],
         )
 
     return method, method_params
@@ -102,7 +124,6 @@ def show_data_source_section():
             help="Upload a JSON file containing your training data",
         )
         if uploaded_file:
-            temp_file_path = None
             try:
                 # Read the uploaded file line by line, decoding each line
                 # The file is opened in text mode by Streamlit, so we can iterate over lines directly.
@@ -167,85 +188,168 @@ def show_data_source_section():
             )
     # Dataset Preview Section
     if st.button("Preview Dataset", type="secondary"):
-        try:
-            # Create pipeline and load data
-            with st.spinner("Loading dataset...", show_time=True):
-                # Create pipeline and load data
-                print(data_config)
-                pipeline = create_pipeline(data_config)
-                pipeline.load_data()
+        # Create pipeline and load data
+        pipeline = create_pipeline(data_config)
+        print(data_config)
 
-            sample = pipeline.data[0]
+        tab1, tab2 = st.tabs(["Raw Data Preview", "Tokenized Output Preview"])
+        with tab1:
+            st.subheader("Human-Readable Source Data")
+            try:
+                with st.spinner("Loading raw preview..."):
+                    raw_examples = pipeline.get_raw_preview(num_records=5)
+                    src_texts = [
+                        text.decode("utf-8")
+                        for text in raw_examples[
+                            data_config["seq2seq_in_prompt"]
+                        ]
+                    ]
+                    dst_texts = [
+                        text.decode("utf-8")
+                        for text in raw_examples[
+                            data_config["seq2seq_in_response"]
+                        ]
+                    ]
 
-            if sample:
+                    df = pd.DataFrame(
+                        {"Prompt": src_texts, "Response": dst_texts}
+                    )
+                    st.dataframe(
+                        df,
+                        use_container_width=True,
+                        column_config={
+                            "Prompt": st.column_config.TextColumn(
+                                "Prompt", width="large"
+                            ),
+                            "Response": st.column_config.TextColumn(
+                                "Response", width="large"
+                            ),
+                        },
+                    )
 
-                # Show treescope visualization
-                with st.expander("Data Structure Visualization", expanded=True):
+            except Exception as e:
+                st.error(e)
+
+        with tab2:
+            st.subheader("Model Input After Tokenization")
+            try:
+                with st.spinner("Loading tokenized preview..."):
+
+                    tokenized_examples = pipeline.get_tokenized_preview(
+                        num_records=5
+                    )
+                    # Show treescope visualization
                     with treescope.active_autovisualizer.set_scoped(
                         treescope.ArrayAutovisualizer()
                     ):
-                        html = treescope.render_to_html(sample)
+                        html = treescope.render_to_html(tokenized_examples)
                         components.html(html, height=250, scrolling=True)
 
-                # Show decoded text
-                with st.expander("Tokenizer Decoded Text", expanded=True):
-                    if "input" in sample:
-                        input_text = pipeline.tokenizer.decode(
-                            sample["input"][0]
-                        )
-                        st.text_area("Input Text", input_text, height=100)
-            else:
-                st.warning("Dataset is empty or could not be loaded")
+                    # Show decoded text
+                    with st.expander("Tokenizer Decoded Text", expanded=True):
+                        if "input" in tokenized_examples:
+                            # Create lists for the conversation
+                            turns = []
+                            for i in range(len(tokenized_examples["input"])):
+                                # Decode the entire block
+                                decoded_text = pipeline.tokenizer.decode(
+                                    tokenized_examples["input"][i]
+                                )
 
-        except Exception as e:
-            st.error(f"Error loading dataset: {str(e)}")
-            st.error("Please check your configuration and try again")
+                                # Split into user and model parts while keeping the tokens
+                                if (
+                                    "<start_of_turn>user" in decoded_text
+                                    and "<start_of_turn>model" in decoded_text
+                                ):
+                                    user_part = decoded_text.split(
+                                        "<start_of_turn>model"
+                                    )[0].strip()
+                                    model_part = (
+                                        "<start_of_turn>model"
+                                        + decoded_text.split(
+                                            "<start_of_turn>model"
+                                        )[1].strip()
+                                    )
+
+                                    turns.append(
+                                        {"user": user_part, "model": model_part}
+                                    )
+
+                            # Create DataFrame
+                            df = pd.DataFrame(turns)
+
+                            # Display in Streamlit
+                            st.dataframe(
+                                df,
+                                use_container_width=True,
+                                column_config={
+                                    "user": st.column_config.TextColumn(
+                                        "user", width="large"
+                                    ),
+                                    "model": st.column_config.TextColumn(
+                                        "model", width="large"
+                                    ),
+                                },
+                            )
+            except Exception as e:
+                st.error(e)
 
     return data_source, data_config
 
 
 def show_model_selection_section():
     """Display the model selection and task type section."""
-    model_variant = st.selectbox(
+    model_config = {}
+    model_config["model_variant"] = st.selectbox(
         "Select Gemma Model",
-        ["Gemma 2B", "Gemma 7B"],
+        list(MODEL_INFO.keys()),
+        index=0,
         help="Choose the model size based on your task and available resources",
     )
 
     # Model information
-    if model_variant == "Gemma 2B":
-        st.info(
-            """
-        - Size: 2 billion parameters
-        - Best for: Smaller tasks, limited GPU memory
-        - Training time: ~2-4 hours on single GPU
+    model = MODEL_INFO[model_config["model_variant"]]
+    st.info(
+        f"""
+        - Size: {model['size']}
+        - {model['description']}
         """
-        )
-    else:
-        st.info(
-            """
-        - Size: 7 billion parameters
-        - Best for: Complex tasks, better performance
-        - Training time: ~6-8 hours on single GPU
-        """
-        )
+    )
+
+    # Show use cases and requirements
+    with st.expander("Model Details"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Use Cases:**")
+            for use_case in model["use_cases"]:
+                st.markdown(f"- {use_case}")
+        with col2:
+            st.markdown("**Requirements:**")
+            for req, value in model["requirements"].items():
+                st.markdown(f"- {req}: {value}")
 
     task_type = st.selectbox(
         "Select Task Type",
-        ["Text Generation", "Question Answering", "Chat", "Custom"],
+        list(TASK_TYPES.keys()),
     )
 
-    return model_variant, task_type
-
-
-def show_training_parameters_section():
+    # Show task type description
+    # task = TASK_TYPES[task_type]
+    # st.info(task["description"])
+    # with st.expander("Task Use Cases"):
+    #     for use_case in task["use_cases"]:
+    #         st.markdown(f"- {use_case}")
     """Display the training parameters section."""
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        epochs = st.slider("Number of Epochs", 1, 10, 5)
+        model_config["epochs"] = st.slider("Number of Epochs", 1, 10, 5)
     with col2:
-        batch_size = st.slider("Batch Size", 1, 32, 8)
-    return epochs, batch_size
+        model_config["batch_size"] = st.slider("Batch Size", 1, 32, 8)
+    with col3:
+        model_config["learning_rate"] = st.slider(
+            "Learning Rate", 1e-6, 1e-3, 1e-4
+        )
+    return model_config
 
 
 def show_configuration_preview(config):
@@ -256,12 +360,7 @@ def show_configuration_preview(config):
         "Method Parameters": config["method_params"],
         "Data Source": config["data_source"],
         "Data Configuration": config["data_config"],
-        "Model Variant": config["model_variant"],
-        "Task Type": config["task_type"],
-        "Training Parameters": {
-            "Epochs": config["epochs"],
-            "Batch Size": config["batch_size"],
-        },
+        "Training Parameters": config["model_config"],
     }
 
     with st.expander("Review Your Configuration", expanded=True):
@@ -309,25 +408,17 @@ def show_create_model():
     config["data_source"], config["data_config"] = show_data_source_section()
 
     st.subheader("4. Model Selection")
-    config["model_variant"], config["task_type"] = (
-        show_model_selection_section()
-    )
+    config["model_config"] = show_model_selection_section()
 
-    st.subheader("5. Training Parameters")
-    config["epochs"], config["batch_size"] = show_training_parameters_section()
-
-    st.subheader("6. Configuration Preview")
+    st.subheader("5. Configuration Preview")
     show_configuration_preview(config)
 
-    st.subheader("7. Start Training")
+    st.subheader("6. Start Training")
     if show_start_training_section(config):
         # Store configuration in session state
         st.session_state.training_config = {
             "name": config["model_name"],
-            "model": config["model_variant"],
-            "task": config["task_type"],
-            "epochs": config["epochs"],
-            "batch_size": config["batch_size"],
+            "model": config["model_config"],
             "method": config["method"],
             "method_params": config["method_params"],
             "data_source": config["data_source"],
