@@ -14,6 +14,13 @@ class StatusManager:
         with open(self.status_file, "w") as f:
             f.write(message)
 
+    def get(self) -> str:
+        """Get the current training status from the status file."""
+        if os.path.exists(self.status_file):
+            with open(self.status_file, "r") as f:
+                return f.read().strip()
+        return "Initializing"
+
     def cleanup(self) -> None:
         """Clean up the status file if it exists."""
         if os.path.exists(self.status_file):

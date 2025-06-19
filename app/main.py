@@ -7,13 +7,11 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # from app.components.model_playground import show_model_playground
-from app.panel.create_model import show_create_model_panel
-from app.panel.training import show_training_panel
-from app.panel.inference import show_inference_panel
-from backend.inferencer import InferenceService
-from backend.utils.manager.GlobalManager import get_process_manager
-from backend.utils.monitor import check_training_status
-from config.training_config import MODEL_ARTIFACT
+from app.view.create_model_view import show_create_model_view
+from app.view.inference_view import show_inference_view
+from app.view.training_dashboard_view import show_training_dashboard_view
+from backend.manager.global_manager import get_process_manager
+from config.training_config import CHECKPOINT_FOLDER
 
 # Set page config
 st.set_page_config(
@@ -44,6 +42,23 @@ if "current_model" not in st.session_state:
     st.session_state.current_model = None
 
 
+def initialize_session_state():
+    """Initialize all session state variables."""
+    # App view state
+    if "view" not in st.session_state:
+        st.session_state.view = "welcome"
+
+    # Training state
+    if "training_started" not in st.session_state:
+        st.session_state.training_started = False
+
+    # Model and data configurations
+    if "model_config" not in st.session_state:
+        st.session_state.model_config = {}
+    if "data_config" not in st.session_state:
+        st.session_state.data_config = {}
+
+
 # --- Welcome Modal & View Management ---
 def display_welcome_modal(is_training: bool):
     """The central navigation hub that adapts to the application's state."""
@@ -65,7 +80,7 @@ def display_welcome_modal(is_training: bool):
                     use_container_width=True,
                     type="primary",
                 ):
-                    st.session_state.view = "training"
+                    st.session_state.view = "training_dashboard"
                     st.rerun()
                 if st.button("Abort and Start New", use_container_width=True):
                     st.session_state.abort_confirmation = True
@@ -80,7 +95,7 @@ def display_welcome_modal(is_training: bool):
                     use_container_width=True,
                     type="primary",
                 ):
-                    st.session_state.view = "create"
+                    st.session_state.view = "create_model"
                     st.rerun()
                 if st.button(
                     "Inference Existing Model", use_container_width=True
@@ -96,7 +111,7 @@ def display_welcome_modal(is_training: bool):
                 if c1.button("Yes, Abort", use_container_width=True):
                     get_process_manager().stop_all_processes(mode="force")
                     st.session_state.abort_confirmation = False
-                    st.session_state.view = "create"
+                    st.session_state.view = "create_model"
                     st.rerun()
                 if c2.button("No, Cancel", use_container_width=True):
                     st.session_state.abort_confirmation = False
@@ -108,17 +123,7 @@ def main():
     """Main function to run the Streamlit app."""
     st.title("Gemma Fine-Tuning UI")
 
-    # Initialize session state for view management
-    if "view" not in st.session_state:
-        st.session_state.view = "welcome"
-    if "abort_confirmation" not in st.session_state:
-        st.session_state.abort_confirmation = False
-
-    is_training = check_training_status()
-    # If training is detected on load, go directly to the dashboard
-    if is_training and st.session_state.view != "training":
-        st.session_state.view = "training"
-        st.rerun()
+    initialize_session_state()
 
     # Sidebar for navigation
     with st.sidebar:
@@ -127,34 +132,15 @@ def main():
             st.session_state.view = "welcome"
             st.rerun()
 
-    # # Sidebar for navigation between unlocked stages
-    # with st.sidebar:
-    #     st.header("Workflow")
-    #     if st.button(
-    #         "1. Model Creation", use_container_width=True, disabled=is_training
-    #     ):
-    #         st.session_state.view = "create"
-    #         st.rerun()
-    #     if st.button("2. Training Dashboard", use_container_width=True):
-    #         st.session_state.view = "training"
-    #         st.rerun()
-    #     if st.button(
-    #         "3. Inference Playground",
-    #         use_container_width=True,
-    #         disabled=is_training,
-    #     ):
-    #         st.session_state.view = "inference"
-    #         st.rerun()
-
     # Main panel displays the current view
     if st.session_state.view == "welcome":
-        display_welcome_modal(is_training)
-    elif st.session_state.view == "create":
-        show_create_model_panel()
-    elif st.session_state.view == "training":
-        show_training_panel()
+        display_welcome_modal(get_process_manager().is_training_running())
+    elif st.session_state.view == "create_model":
+        show_create_model_view()
+    elif st.session_state.view == "training_dashboard":
+        show_training_dashboard_view()
     elif st.session_state.view == "inference":
-        show_inference_panel()
+        show_inference_view()
 
 
 if __name__ == "__main__":

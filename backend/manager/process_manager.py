@@ -7,15 +7,9 @@ from typing import Literal, Optional
 
 import streamlit as st
 
-from config.training_config import (
-    LOCK_FILE,
-    STATUS_LOG,
-    TENSORBOARD_LOGDIR,
-    TENSORBOARD_PORT,
-    TRAINER_MAIN_PATH,
-    TRAINER_STDERR_LOG,
-    TRAINER_STDOUT_LOG,
-)
+from config.training_config import (LOCK_FILE, STATUS_LOG, TENSORBOARD_LOGDIR,
+                                    TENSORBOARD_PORT, TRAINER_MAIN_PATH,
+                                    TRAINER_STDERR_LOG, TRAINER_STDOUT_LOG)
 
 
 class ProcessManager:
@@ -184,3 +178,8 @@ class ProcessManager:
         """Cleanup method called by atexit."""
         print("ATEIXT: Shutting down background processes...")
         self.stop_all_processes(mode="graceful")
+
+    @staticmethod
+    def is_training_running() -> bool:
+        """Check if training is currently in progress by checking the lock file."""
+        return os.path.exists(LOCK_FILE)

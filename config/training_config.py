@@ -4,7 +4,7 @@ from pathlib import Path
 # Training process constants
 LOCK_FILE = ".training.lock"
 STATUS_LOG = "status.log"
-MODEL_ARTIFACT = os.path.abspath("./test_checkpoints/")  # ← Convert to absolute
+CHECKPOINT_FOLDER = os.path.abspath("./checkpoints/")
 # Tensorboard log directory
 TENSORBOARD_LOGDIR = "/tmp/ckpts"
 TENSORBOARD_PORT = 6007

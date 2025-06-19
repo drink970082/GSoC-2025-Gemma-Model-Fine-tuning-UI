@@ -1,56 +1,60 @@
-import atexit
 import os
 import time
-from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 
-from app.components.dashboard.kpi_panel import display_kpis
-from app.components.dashboard.logs_panel import display_live_logs
-from app.components.dashboard.plots_panel import display_native_plots
-from app.components.dashboard.usage_panel import display_system_usage_panel
-from app.utils.tensorboard import (
-    clear_tensorboard_cache,
-    display_tensorboard_iframe,
-    reset_tensorboard_training_time,
-    update_tensorboard_data,
+from app.components.training_dashboard.kpi_panel import display_kpis
+from app.components.training_dashboard.logs_panel import display_live_logs
+from app.components.training_dashboard.plots_panel import display_native_plots
+from app.components.training_dashboard.usage_panel import (
+    display_system_usage_panel,
 )
-from backend.utils.manager.ProcessManager import ProcessManager
-from backend.utils.monitor import (
-    check_training_status,
-    get_training_status,
-    initialize_session_state,
+from backend.manager.global_manager import (
+    get_process_manager,
+    get_status_manager,
+    get_tensorboard_manager,
 )
-from config.training_config import (
-    DEFAULT_DATA_CONFIG,
-    DEFAULT_MODEL_CONFIG,
-    LOCK_FILE,
-    MODEL_ARTIFACT,
-)
+from config.training_config import CHECKPOINT_FOLDER, LOCK_FILE
+
+
+@st.fragment(run_every=1)
+def update_tensorboard_data():
+    """Update TensorBoard data every second (separate from display fragments)."""
+    manager = get_tensorboard_manager()
+    # This triggers the update check and loads fresh data if needed
+    manager.get_data()
 
 
 @st.fragment(run_every=1)
 def poll_training_status():
-    if not check_training_status() and st.session_state.session_started_by_app:
+    manager = get_process_manager()
+    if (
+        not manager.is_training_running()
+        and st.session_state.session_started_by_app
+    ):
         st.session_state.session_started_by_app = False
         st.rerun()
 
 
 @st.fragment(run_every=1)
 def update_status():
-    status = get_training_status()
+    manager = get_status_manager()
+    status = manager.get()
     st.info(f"Training in progress... Status: {status}")
 
 
-def show_training_panel():
+def show_training_dashboard_view():
     """Display the training interface."""
-    if "process_manager" not in st.session_state:
-        st.session_state.process_manager = ProcessManager()
-        atexit.register(st.session_state.process_manager.cleanup)
+    process_manager = get_process_manager()
+    tensorboard_manager = get_tensorboard_manager()
+    status_manager = get_status_manager()
     st.title("LLM Fine-Tuning Dashboard")
-    initialize_session_state()
-
-    is_currently_training = check_training_status()
+    if "shutdown_requested" not in st.session_state:
+        st.session_state.shutdown_requested = False
+    if "session_started_by_app" not in st.session_state:
+        st.session_state.session_started_by_app = False
+    is_currently_training = process_manager.is_training_running()
     session_was_started_here = st.session_state.session_started_by_app
     print("--------------------------------")
     print("is_currently_training", is_currently_training)
@@ -73,9 +77,7 @@ def show_training_panel():
             type="primary",
             use_container_width=True,
         ):
-            if st.session_state.process_manager.stop_all_processes(
-                mode="force"
-            ):
+            if process_manager.stop_all_processes(mode="force"):
                 st.success(
                     "Successfully cleaned up stale processes. Will reload in 3 seconds."
                 )
@@ -112,12 +114,10 @@ def show_training_panel():
                 show_time=True,
             ):
                 # Clear TensorBoard cache when stopping training
-                clear_tensorboard_cache()
-                if st.session_state.process_manager.stop_all_processes():
+                tensorboard_manager.clear_cache()
+                if process_manager.stop_all_processes():
                     st.session_state.shutdown_requested = True
-                elif st.session_state.process_manager.stop_all_processes(
-                    mode="force"
-                ):
+                elif process_manager.stop_all_processes(mode="force"):
                     st.session_state.shutdown_requested = True
             if st.session_state.shutdown_requested:
                 st.success("All processes have been shut down.")
@@ -141,7 +141,7 @@ def show_training_panel():
         # State 4: Not training (initial, completed, or failed state)
         st.session_state.session_started_by_app = False
 
-        final_status = get_training_status()
+        final_status = status_manager.get()
 
         if "Error" in final_status:
             st.error(f"Training Failed: {final_status}")
@@ -151,10 +151,8 @@ def show_training_panel():
             display_live_logs(expanded=True)
             if st.button("Reset Application"):
                 # Clear TensorBoard cache when resetting
-                clear_tensorboard_cache()
-                if st.session_state.process_manager.stop_all_processes(
-                    mode="force"
-                ):
+                tensorboard_manager.clear_cache()
+                if process_manager.stop_all_processes(mode="force"):
                     st.success("Successfully reset the application.")
                 else:
                     st.error(
@@ -162,13 +160,18 @@ def show_training_panel():
                     )
                 st.rerun()
         else:
-            if os.path.exists(MODEL_ARTIFACT):
-                stats = os.stat(MODEL_ARTIFACT)
-                mod_time = datetime.fromtimestamp(stats.st_mtime).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
+            if not os.path.exists(CHECKPOINT_FOLDER):
+                return None
+
+            subdirs = [p for p in Path(CHECKPOINT_FOLDER).iterdir()]
+            if not subdirs:
+                return None
+
+            # Return the path of the most recently created directory
+            latest_subdir = max(subdirs, key=lambda p: p.stat().st_ctime)
+            if latest_subdir:
                 st.success(
-                    f"A trained model artifact was found (Last Modified: {mod_time})."
+                    f"A trained model checkpoint was found ({latest_subdir})."
                 )
                 if st.button("Go to Inference Playground", type="primary"):
                     st.session_state.view = "inference"
@@ -181,4 +184,4 @@ def show_training_panel():
 
 
 if __name__ == "__main__":
-    show_training_panel()
+    show_training_dashboard_view()

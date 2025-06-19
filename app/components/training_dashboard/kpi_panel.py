@@ -2,7 +2,7 @@ import time
 
 import streamlit as st
 
-from app.utils.tensorboard import get_tensorboard_manager
+from backend.manager.global_manager import get_tensorboard_manager
 from config.training_config import DEFAULT_MODEL_CONFIG
 
 
