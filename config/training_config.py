@@ -33,7 +33,6 @@ class DataConfig:
     source: str
     dataset_name: str
     split: str
-    batch_size: int
     shuffle: bool
     seq2seq_in_prompt: str
     seq2seq_in_response: str
@@ -46,7 +45,6 @@ DEFAULT_DATA_CONFIG = {
     "source": "tensorflow",
     "dataset_name": "mtnt",
     "split": "train",
-    "batch_size": 4,
     "shuffle": True,
     "seq2seq_in_prompt": "src",
     "seq2seq_max_length": 200,

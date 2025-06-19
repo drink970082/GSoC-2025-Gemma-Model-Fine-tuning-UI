@@ -42,7 +42,7 @@ def update_status():
     st.info(f"Training in progress... Status: {status}")
 
 
-def show_training():
+def show_training_panel():
     """Display the training interface."""
     if "process_manager" not in st.session_state:
         st.session_state.process_manager = ProcessManager()
@@ -104,10 +104,6 @@ def show_training():
         poll_training_status()
         # State 3: Training is actively in progress
         update_status()
-        # Ensure TensorBoard is running
-        if not st.session_state.process_manager.tensorboard_process:
-            st.session_state.process_manager.start_tensorboard()
-
         if st.button(
             "Abort Training", type="primary", use_container_width=True
         ):
@@ -140,7 +136,6 @@ def show_training():
         display_native_plots()
         display_system_usage_panel()
         display_live_logs()
-        display_tensorboard_iframe()
 
     else:
         # State 4: Not training (initial, completed, or failed state)
@@ -175,30 +170,15 @@ def show_training():
                 st.success(
                     f"A trained model artifact was found (Last Modified: {mod_time})."
                 )
+                if st.button("Go to Inference Playground", type="primary"):
+                    st.session_state.view = "inference"
+                    st.rerun()
 
-            st.header("Start a New Training Run")
-            st.info("Click 'Start Fine-Tuning' to begin.")
-            if st.button(
-                "Start Fine-Tuning", type="primary", use_container_width=True
-            ):
-                # Reset TensorBoard training time when starting new training
-                reset_tensorboard_training_time()
-                st.session_state.process_manager.start_training(
-                    DEFAULT_DATA_CONFIG,
-                    DEFAULT_MODEL_CONFIG,
-                )
-                st.session_state.session_started_by_app = True
-                with st.spinner(
-                    "Waiting for training process to initialize..."
-                ):
-                    start_time = time.time()
-                    while (
-                        not os.path.exists(LOCK_FILE)
-                        and time.time() - start_time < 10
-                    ):
-                        time.sleep(0.5)
+            st.info("No active or completed training runs found.")
+            if st.button("Create a New Model to Start Training"):
+                st.session_state.view = "create"
                 st.rerun()
 
 
 if __name__ == "__main__":
-    show_training()
+    show_training_panel()

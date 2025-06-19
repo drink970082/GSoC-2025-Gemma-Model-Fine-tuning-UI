@@ -1,6 +1,6 @@
 import atexit
-from ProcessManager import ProcessManager
-from TensorboardManager import TensorBoardDataManager
+from backend.utils.manager.ProcessManager import ProcessManager
+from backend.utils.manager.TensorboardManager import TensorBoardDataManager
 
 # Global managers
 _process_manager = None

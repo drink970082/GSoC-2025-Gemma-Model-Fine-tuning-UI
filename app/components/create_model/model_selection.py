@@ -34,19 +34,38 @@ def show_model_selection_section():
             for req, value in model["requirements"].items():
                 st.markdown(f"- {req}: {value}")
 
-    task_type = st.selectbox(
-        "Select Task Type",
-        list(TASK_TYPES.keys()),
-    )
+    # task_type = st.selectbox(
+    #     "Select Task Type",
+    #     list(TASK_TYPES.keys()),
+    # )
 
     # Training parameters
+    st.subheader("Training Parameters")
     col1, col2, col3 = st.columns(3)
     with col1:
-        model_config["epochs"] = st.slider("Number of Epochs", 1, 10, 5)
+        model_config["epochs"] = st.number_input(
+            "Number of Epochs",
+            min_value=1,
+            value=100,
+            step=1,
+            help="Enter the total number of training epochs.",
+        )
     with col2:
-        model_config["batch_size"] = st.slider("Batch Size", 1, 32, 8)
+        model_config["batch_size"] = st.slider(
+            "Batch Size",
+            min_value=1,
+            max_value=32,
+            value=4,
+            help="Select the number of samples to process in each batch.",
+        )
     with col3:
         model_config["learning_rate"] = st.slider(
-            "Learning Rate", 1e-6, 1e-3, 1e-4
+            "Learning Rate",
+            min_value=1e-6,
+            max_value=1e-3,
+            value=1e-4,
+            step=1e-6,
+            format="%e",
+            help="Set the learning rate. Small values like 1e-4 or 1e-5 are common.",
         )
     return model_config

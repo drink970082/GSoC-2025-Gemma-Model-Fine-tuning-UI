@@ -4,7 +4,7 @@ from backend.inferencer import InferenceService
 from config.training_config import DEFAULT_MODEL_CONFIG, ModelConfig
 
 
-def inference_playground():
+def show_inference_panel():
     """Display the inference playground."""
     st.header("Inference Playground")
     st.write("Test your newly trained model!")
@@ -60,4 +60,4 @@ def inference_playground():
 
 
 if __name__ == "__main__":
-    inference_playground()
+    show_inference_panel()

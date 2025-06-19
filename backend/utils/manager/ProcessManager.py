@@ -1,10 +1,12 @@
+import json
 import os
+import signal
 import subprocess
 import time
 from typing import Literal, Optional
 
-import signal
 import streamlit as st
+
 from config.training_config import (
     LOCK_FILE,
     STATUS_LOG,
@@ -22,25 +24,61 @@ class ProcessManager:
     def __init__(self):
         self.training_process: Optional[subprocess.Popen] = None
         self.tensorboard_process: Optional[subprocess.Popen] = None
-        print("ProcessManager initialized.")
 
     def start_training(self, data_config, model_config):
+        """
+        Starts the training process in a subprocess.
+        """
         if os.path.exists(LOCK_FILE):
             st.warning("Training is already in progress.")
             return
+
+        data_config_str = str(data_config)
+        model_config_str = str(model_config)
+
         command = [
             "python",
             TRAINER_MAIN_PATH,
             "--data_config",
-            str(data_config),
+            data_config_str,
             "--model_config",
-            str(model_config),
+            model_config_str,
         ]
-        trainer_stdout = open(TRAINER_STDOUT_LOG, "w")
-        trainer_stderr = open(TRAINER_STDERR_LOG, "w")
-        self.training_process = subprocess.Popen(
-            command, stdout=trainer_stdout, stderr=trainer_stderr
-        )
+
+        try:
+            with open(TRAINER_STDOUT_LOG, "w") as f_out, open(
+                TRAINER_STDERR_LOG, "w"
+            ) as f_err:
+                self.training_process = subprocess.Popen(
+                    command, stdout=f_out, stderr=f_err
+                )
+        except Exception as e:
+            st.error(f"Failed to start the training subprocess: {e}")
+            return
+
+        # Give the subprocess a moment to start and potentially fail
+        time.sleep(2)
+
+        # Check if the process has already terminated
+        if self.training_process.poll() is not None:
+            try:
+                with open(TRAINER_STDERR_LOG, "r") as f:
+                    error_output = f.read()
+                if error_output:
+                    st.error("The training process failed to start. Error:")
+                    st.code(error_output, language="bash")
+                else:
+                    st.error(
+                        "The training process failed to start with no error message."
+                    )
+            except FileNotFoundError:
+                st.error(
+                    "Could not read the error log file for the training process."
+                )
+
+            if os.path.exists(LOCK_FILE):
+                os.remove(LOCK_FILE)
+            return
 
     def start_tensorboard(self):
         if self.tensorboard_process and self.tensorboard_process.poll() is None:
@@ -74,25 +112,19 @@ class ProcessManager:
         if not process or process.poll() is not None:
             return True
 
-        print(f"Terminating {name} process (PID: {process.pid})...")
-
         if mode == "graceful":
             process.send_signal(signal.SIGINT)
             try:
                 process.wait(timeout=5)
-                print(f"{name} process terminated gracefully.")
                 return True
             except subprocess.TimeoutExpired:
-                print(f"{name} did not terminate gracefully. Forcing kill.")
                 return self._terminate_process(process, name, mode="force")
         else:
             try:
                 process.kill()
                 process.wait(timeout=2)
-                print(f"{name} process forcefully terminated.")
                 return True
             except subprocess.TimeoutExpired:
-                print(f"Failed to forcefully terminate {name} process.")
                 return False
 
     def _clean_files(self):
@@ -108,7 +140,6 @@ class ProcessManager:
             try:
                 if os.path.exists(f):
                     os.remove(f)
-                    print(f"Removed file: {f}")
             except OSError as e:
                 print(f"Could not remove file {f}: {e}")
 
