@@ -1,11 +1,10 @@
 import os
-import signal
 import subprocess
 import time
 from typing import Literal, Optional
 
+import signal
 import streamlit as st
-
 from config.training_config import (
     LOCK_FILE,
     STATUS_LOG,
@@ -15,23 +14,6 @@ from config.training_config import (
     TRAINER_STDERR_LOG,
     TRAINER_STDOUT_LOG,
 )
-
-
-class StatusManager:
-    """Manages the training status updates and file handling."""
-
-    def __init__(self, status_file: str = STATUS_LOG):
-        self.status_file = status_file
-
-    def update(self, message: str) -> None:
-        """Update the status message in the status file."""
-        with open(self.status_file, "w") as f:
-            f.write(message)
-
-    def cleanup(self) -> None:
-        """Clean up the status file if it exists."""
-        if os.path.exists(self.status_file):
-            os.remove(self.status_file)
 
 
 class ProcessManager:
@@ -46,7 +28,6 @@ class ProcessManager:
         if os.path.exists(LOCK_FILE):
             st.warning("Training is already in progress.")
             return
-        st.info("Fine-tuning has started. This may take a while.")
         command = [
             "python",
             TRAINER_MAIN_PATH,

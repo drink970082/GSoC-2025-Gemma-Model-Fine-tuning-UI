@@ -6,7 +6,7 @@ import streamlit as st
 @st.fragment(run_every=1)
 def display_system_usage_panel():
     """Display the system resource usage panel."""
-    st.subheader("Panel 3: System Resource Usage")
+    st.subheader("System Resource Usage")
     try:
         pynvml.nvmlInit()
         device_count = pynvml.nvmlDeviceGetCount()

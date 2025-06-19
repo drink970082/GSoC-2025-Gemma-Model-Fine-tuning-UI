@@ -49,3 +49,6 @@ notebooks/
 
 # tensorboard logs
 tensorboard_logs/
+
+# checkpoints
+**checkpoints/

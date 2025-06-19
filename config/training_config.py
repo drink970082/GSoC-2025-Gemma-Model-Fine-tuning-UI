@@ -4,8 +4,7 @@ from pathlib import Path
 # Training process constants
 LOCK_FILE = ".training.lock"
 STATUS_LOG = "status.log"
-MODEL_ARTIFACT = "trained_model.pt"
-KPI_LOG = "/tmp/ckpts/kpi.json"  # Place it inside the workdir
+MODEL_ARTIFACT = os.path.abspath("./test_checkpoints/")  # ← Convert to absolute
 # Tensorboard log directory
 TENSORBOARD_LOGDIR = "/tmp/ckpts"
 TENSORBOARD_PORT = 6007
@@ -57,7 +56,7 @@ DEFAULT_DATA_CONFIG = {
 
 DEFAULT_MODEL_CONFIG = {
     "model_variant": "Gemma3_1B",
-    "epochs": 300,
+    "epochs": 1,
     "batch_size": 4,
     "learning_rate": 1e-3,
 }

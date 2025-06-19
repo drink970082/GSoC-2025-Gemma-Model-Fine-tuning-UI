@@ -1,22 +1,25 @@
-from typing import Any, Optional, Tuple
 import os
-from pathlib import Path
-import optax
-from kauldron import kd
 import sys
 import traceback
+from pathlib import Path
+from typing import Any, Optional, Tuple
 
+import optax
+from orbax import checkpoint as ocp
+from data_pipeline import create_pipeline
+from kauldron import kd
+from gemma import gm
+
+from backend.core.loss import LossFactory
+from backend.core.model import ModelFactory
+from backend.core.sampler import SamplerFactory
+from backend.utils.manager.StatusManager import StatusManager
 from config.training_config import (
-    ModelConfig,
-    DataConfig,
     LOCK_FILE,
     MODEL_ARTIFACT,
+    DataConfig,
+    ModelConfig,
 )
-from backend.utils.manager import StatusManager
-from backend.core.model import ModelFactory
-from backend.core.loss import LossFactory
-from backend.core.sampler import SamplerFactory
-from data_pipeline import create_pipeline
 
 
 class ModelTrainer:
@@ -41,7 +44,7 @@ class ModelTrainer:
     def create_trainer(self, model: Any, train_ds: Any) -> kd.train.Trainer:
         return kd.train.Trainer(
             seed=42,
-            workdir="/tmp/ckpts",
+            workdir="/tmp/ckpts/",
             train_ds=train_ds,
             model=model,
             init_transform=ModelFactory.create_checkpoint(self.model_config),
@@ -54,7 +57,7 @@ class ModelTrainer:
             log_summaries_every=1000,
         )
 
-    def train(self) -> Tuple[Any, Any, Any]:
+    def train(self) -> Tuple[Any, Any]:
         """Execute the training process."""
         state, aux = None, None
         try:
@@ -69,17 +72,11 @@ class ModelTrainer:
 
             self.status_manager.update("Starting training...")
             state, aux = self.trainer.train()
-
-            self.status_manager.update("Creating sampler...")
-            sampler = SamplerFactory.create_sampler(
-                self.model, state, self.pipeline.tokenizer
-            )
-
             self.status_manager.update("Saving model...")
-            Path(MODEL_ARTIFACT).touch()
-            self.status_manager.update("Training completed successfully!")
-
-            return state, aux, sampler
+            ckpt = ocp.StandardCheckpointer()
+            ckpt.save(os.path.abspath("./checkpoints/"), state.params)
+            ckpt.wait_until_finished()
+            return state, aux
 
         except Exception:
             error_traceback_str = traceback.format_exc()

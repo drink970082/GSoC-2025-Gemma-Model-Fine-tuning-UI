@@ -1,6 +1,9 @@
+import os
+import pickle
 from typing import Any
+
 from gemma import gm
-from config.training_config import ModelConfig
+from config.training_config import MODEL_ARTIFACT, ModelConfig
 
 
 class ModelFactory:
@@ -19,3 +22,13 @@ class ModelFactory:
             gm.ckpts.CheckpointPath, (config.model_variant + "_IT").upper()
         )
         return gm.ckpts.LoadCheckpoint(path=checkpoint_path)
+
+    @staticmethod
+    def load_trained_params() -> Any:
+        """Load trained parameters from saved checkpoint."""
+        if not os.path.exists(MODEL_ARTIFACT):
+            raise FileNotFoundError(
+                f"No trained parameters found at {MODEL_ARTIFACT}"
+            )
+
+        return gm.ckpts.load_params(MODEL_ARTIFACT)

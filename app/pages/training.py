@@ -9,26 +9,41 @@ from app.components.dashboard.kpi_panel import display_kpis
 from app.components.dashboard.logs_panel import display_live_logs
 from app.components.dashboard.plots_panel import display_native_plots
 from app.components.dashboard.usage_panel import display_system_usage_panel
-from app.utils.tensorboard import display_tensorboard_iframe
-from backend.utils.manager import ProcessManager
+from app.utils.tensorboard import (
+    clear_tensorboard_cache,
+    display_tensorboard_iframe,
+    reset_tensorboard_training_time,
+    update_tensorboard_data,
+)
+from backend.utils.manager.ProcessManager import ProcessManager
 from backend.utils.monitor import (
     check_training_status,
     get_training_status,
     initialize_session_state,
 )
-from app.utils.tensorboard import load_event_data
 from config.training_config import (
     DEFAULT_DATA_CONFIG,
     DEFAULT_MODEL_CONFIG,
     LOCK_FILE,
     MODEL_ARTIFACT,
-    TENSORBOARD_LOGDIR,
 )
+
+
+@st.fragment(run_every=1)
+def poll_training_status():
+    if not check_training_status() and st.session_state.session_started_by_app:
+        st.session_state.session_started_by_app = False
+        st.rerun()
+
+
+@st.fragment(run_every=1)
+def update_status():
+    status = get_training_status()
+    st.info(f"Training in progress... Status: {status}")
 
 
 def show_training():
     """Display the training interface."""
-    # Initialize the process manager if it doesn't exist
     if "process_manager" not in st.session_state:
         st.session_state.process_manager = ProcessManager()
         atexit.register(st.session_state.process_manager.cleanup)
@@ -80,55 +95,49 @@ def show_training():
             if not is_currently_training:
                 st.session_state.shutdown_requested = False
                 st.session_state.session_started_by_app = False
-                st.success("All processes have been shut down.")
-                time.sleep(2)
                 st.rerun()
             else:
                 time.sleep(1)
                 st.rerun()
 
     elif is_currently_training and session_was_started_here:
+        poll_training_status()
         # State 3: Training is actively in progress
-        status = get_training_status()
-        st.info(f"Training in progress... Status: {status}")
-
+        update_status()
         # Ensure TensorBoard is running
         if not st.session_state.process_manager.tensorboard_process:
             st.session_state.process_manager.start_tensorboard()
 
         if st.button(
-            "Abort Training", type="secondary", use_container_width=True
+            "Abort Training", type="primary", use_container_width=True
         ):
-            if st.session_state.process_manager.stop_all_processes():
-                st.session_state.shutdown_requested = True
-                st.rerun()
-            else:
-                st.error(
-                    "Failed to stop training processes. Trying forceful shutdown..."
-                )
-                if st.session_state.process_manager.stop_all_processes(
+            with st.spinner(
+                "Shutdown requested. Waiting for processes to terminate...",
+                show_time=True,
+            ):
+                # Clear TensorBoard cache when stopping training
+                clear_tensorboard_cache()
+                if st.session_state.process_manager.stop_all_processes():
+                    st.session_state.shutdown_requested = True
+                elif st.session_state.process_manager.stop_all_processes(
                     mode="force"
                 ):
                     st.session_state.shutdown_requested = True
-                    st.rerun()
-                else:
-                    st.error(
-                        "Failed to forcefully stop processes. Please check the logs."
-                    )
+            if st.session_state.shutdown_requested:
+                st.success("All processes have been shut down.")
+                time.sleep(2)
+                st.rerun()
+            else:
+                st.error(
+                    "Failed to stop training processes. Please check the logs."
+                )
 
         st.divider()
 
         # Dashboard Panels
-        event_data = load_event_data(TENSORBOARD_LOGDIR)
-        if not event_data:
-            if "Initializing" in status:
-                st.info(
-                    "Model is being compiled and initialized. This may take a few minutes..."
-                )
-            else:
-                st.info("Waiting for training metrics to be logged...")
-        display_kpis(event_data)
-        display_native_plots(event_data)
+        update_tensorboard_data()
+        display_kpis()
+        display_native_plots()
         display_system_usage_panel()
         display_live_logs()
         display_tensorboard_iframe()
@@ -146,6 +155,8 @@ def show_training():
             )
             display_live_logs(expanded=True)
             if st.button("Reset Application"):
+                # Clear TensorBoard cache when resetting
+                clear_tensorboard_cache()
                 if st.session_state.process_manager.stop_all_processes(
                     mode="force"
                 ):
@@ -170,6 +181,8 @@ def show_training():
             if st.button(
                 "Start Fine-Tuning", type="primary", use_container_width=True
             ):
+                # Reset TensorBoard training time when starting new training
+                reset_tensorboard_training_time()
                 st.session_state.process_manager.start_training(
                     DEFAULT_DATA_CONFIG,
                     DEFAULT_MODEL_CONFIG,
