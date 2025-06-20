@@ -7,16 +7,9 @@ from typing import Literal, Optional
 
 import streamlit as st
 
-from config.training_config import (
-    LOCK_FILE,
-    STATUS_LOG,
-    TENSORBOARD_LOGDIR,
-    TENSORBOARD_PORT,
-    TRAINER_MAIN_PATH,
-    TRAINER_STDERR_LOG,
-    TRAINER_STDOUT_LOG,
-)
+from config.app_config import get_config
 
+config = get_config()
 
 class ProcessManager:
     """A class to manage background subprocesses and cleanup operations."""
@@ -35,7 +28,7 @@ class ProcessManager:
         """
         Starts the training process in a subprocess.
         """
-        if os.path.exists(LOCK_FILE):
+        if os.path.exists(config.LOCK_FILE):
             st.warning("Training is already in progress.")
             return
 
@@ -48,7 +41,7 @@ class ProcessManager:
 
         command = [
             "python",
-            TRAINER_MAIN_PATH,
+            config.TRAINER_MAIN_PATH,
             "--data_config",
             data_config_str,
             "--model_config",
@@ -56,8 +49,8 @@ class ProcessManager:
         ]
 
         try:
-            with open(TRAINER_STDOUT_LOG, "w") as f_out, open(
-                TRAINER_STDERR_LOG, "w"
+            with open(config.TRAINER_STDOUT_LOG, "w") as f_out, open(
+                config.TRAINER_STDERR_LOG, "w"
             ) as f_err:
                 self.training_process = subprocess.Popen(
                     command, stdout=f_out, stderr=f_err
@@ -65,14 +58,10 @@ class ProcessManager:
         except Exception as e:
             st.error(f"Failed to start the training subprocess: {e}")
             return
-
-        # Give the subprocess a moment to start and potentially fail
         time.sleep(2)
-
-        # Check if the process has already terminated
         if self.training_process.poll() is not None:
             try:
-                with open(TRAINER_STDERR_LOG, "r") as f:
+                with open(config.TRAINER_STDERR_LOG, "r") as f:
                     error_output = f.read()
                 if error_output:
                     st.error("The training process failed to start. Error:")
@@ -86,8 +75,8 @@ class ProcessManager:
                     "Could not read the error log file for the training process."
                 )
 
-            if os.path.exists(LOCK_FILE):
-                os.remove(LOCK_FILE)
+            if os.path.exists(config.LOCK_FILE):
+                os.remove(config.LOCK_FILE)
             return
 
     def start_tensorboard(self):
@@ -96,9 +85,9 @@ class ProcessManager:
         command = [
             "tensorboard",
             "--logdir",
-            TENSORBOARD_LOGDIR,
+            config.TENSORBOARD_LOGDIR,
             "--port",
-            str(TENSORBOARD_PORT),
+            str(config.TENSORBOARD_PORT),
         ]
         self.tensorboard_process = subprocess.Popen(command)
         time.sleep(5)
@@ -140,10 +129,10 @@ class ProcessManager:
     def _clean_files(self):
         """Clean up all temporary files."""
         files_to_delete = [
-            LOCK_FILE,
-            STATUS_LOG,
-            TRAINER_STDOUT_LOG,
-            TRAINER_STDERR_LOG,
+            config.LOCK_FILE,
+            config.STATUS_LOG,
+            config.TRAINER_STDOUT_LOG,
+            config.TRAINER_STDERR_LOG,
         ]
 
         for f in files_to_delete:
@@ -176,7 +165,7 @@ class ProcessManager:
                 # If in force mode, also try to kill any orphaned processes
                 try:
                     subprocess.run(
-                        ["pkill", "-f", TRAINER_MAIN_PATH], check=False
+                        ["pkill", "-f", config.TRAINER_MAIN_PATH], check=False
                     )
                     subprocess.run(["pkill", "-f", "tensorboard"], check=False)
                 except FileNotFoundError:
@@ -198,4 +187,4 @@ class ProcessManager:
     @staticmethod
     def is_training_running() -> bool:
         """Check if training is currently in progress by checking the lock file."""
-        return os.path.exists(LOCK_FILE)
+        return os.path.exists(config.LOCK_FILE)

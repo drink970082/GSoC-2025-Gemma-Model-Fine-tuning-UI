@@ -1,12 +1,14 @@
 import os
 
-from config.training_config import STATUS_LOG
+from config.app_config import get_config
+
+config = get_config()
 
 
 class StatusManager:
     """Manages the training status updates and file handling."""
 
-    def __init__(self, status_file: str = STATUS_LOG):
+    def __init__(self, status_file: str = config.STATUS_LOG):
         self.status_file = status_file
 
     def update(self, message: str) -> None:

@@ -8,14 +8,15 @@ from tensorboard.backend.event_processing.event_accumulator import (
     EventAccumulator,
 )
 
-from config.training_config import TENSORBOARD_LOGDIR
+from config.app_config import get_config
 
+config = get_config()
 
 class TensorBoardDataManager:
     """Manages TensorBoard event data loading and caching."""
 
     def __init__(
-        self, log_dir: str = TENSORBOARD_LOGDIR, ignore_timing: bool = False
+        self, log_dir: str = config.TENSORBOARD_LOGDIR, ignore_timing: bool = False
     ):
         self.log_dir = log_dir
         self._event_data = {}

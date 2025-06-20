@@ -11,7 +11,6 @@ from app.view.create_model_view import show_create_model_view
 from app.view.inference_view import show_inference_view
 from app.view.training_dashboard_view import show_training_dashboard_view
 from backend.manager.global_manager import get_process_manager
-from config.training_config import CHECKPOINT_FOLDER
 
 # Set page config
 st.set_page_config(

@@ -1,6 +1,8 @@
 import streamlit as st
 
-from config.model_info import MODEL_INFO, TASK_TYPES
+from config.app_config import get_config
+
+config = get_config()
 
 
 def show_model_selection_section():
@@ -8,13 +10,13 @@ def show_model_selection_section():
     model_config = {}
     model_config["model_variant"] = st.selectbox(
         "Select Gemma Model",
-        list(MODEL_INFO.keys()),
+        list(config.MODEL_INFO.keys()),
         index=0,
         help="Choose the model size based on your task and available resources",
     )
 
     # Model information
-    model = MODEL_INFO[model_config["model_variant"]]
+    model = config.MODEL_INFO[model_config["model_variant"]]
     st.info(
         f"""
         - Size: {model['size']}

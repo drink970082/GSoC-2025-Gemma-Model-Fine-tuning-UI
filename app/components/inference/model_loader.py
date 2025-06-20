@@ -1,7 +1,8 @@
 import streamlit as st
 
 from backend.inferencer import Inferencer
-from config.training_config import DEFAULT_MODEL_CONFIG, ModelConfig
+from backend.manager.global_manager import get_process_manager
+from config.app_config import ModelConfig
 
 
 def ensure_model_loaded() -> Inferencer | None:
@@ -11,8 +12,9 @@ def ensure_model_loaded() -> Inferencer | None:
     Returns the service instance if loaded, otherwise None.
     """
     if "inference_service" not in st.session_state:
+        process_manager = get_process_manager()
         st.session_state.inferencer = Inferencer(
-            ModelConfig(**DEFAULT_MODEL_CONFIG)
+            ModelConfig(**process_manager.model_config)
         )
 
     service = st.session_state.inferencer

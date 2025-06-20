@@ -7,20 +7,15 @@ import time
 
 import optax
 from data_pipeline import create_pipeline
-from gemma import gm
 from kauldron import kd
 from orbax import checkpoint as ocp
 
 from backend.core.loss import LossFactory
 from backend.core.model import ModelFactory
-from backend.core.sampler import SamplerFactory
 from backend.manager.status_manager import StatusManager
-from config.training_config import (
-    CHECKPOINT_FOLDER,
-    LOCK_FILE,
-    DataConfig,
-    ModelConfig,
-)
+from config.app_config import get_config, DataConfig, ModelConfig
+
+config = get_config()
 
 
 class ModelTrainer:
@@ -62,7 +57,7 @@ class ModelTrainer:
         """Execute the training process."""
         state, aux = None, None
         try:
-            Path(LOCK_FILE).touch()
+            Path(config.LOCK_FILE).touch()
             self.status_manager.update("Initializing training...")
 
             self.setup_environment()
@@ -76,7 +71,7 @@ class ModelTrainer:
             self.status_manager.update("Saving model...")
             ckpt = ocp.StandardCheckpointer()
             ckpt.save(
-                os.path.abspath(f"{CHECKPOINT_FOLDER}/{time.time()}"),
+                os.path.abspath(f"{config.CHECKPOINT_FOLDER}/{time.time()}"),
                 state.params,
             )
             ckpt.wait_until_finished()
@@ -89,6 +84,6 @@ class ModelTrainer:
             self.status_manager.update(f"Error: {error_summary}")
             raise
         finally:
-            if os.path.exists(LOCK_FILE):
-                os.remove(LOCK_FILE)
+            if os.path.exists(config.LOCK_FILE):
+                os.remove(config.LOCK_FILE)
             self.status_manager.cleanup()
