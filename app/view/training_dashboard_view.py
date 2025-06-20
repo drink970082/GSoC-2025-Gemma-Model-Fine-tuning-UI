@@ -15,7 +15,9 @@ from backend.manager.global_manager import (
     get_status_manager,
     get_tensorboard_manager,
 )
-from config.training_config import CHECKPOINT_FOLDER, LOCK_FILE
+from config.app_config import get_config
+
+config = get_config()
 
 
 @st.fragment(run_every=1)
@@ -146,10 +148,10 @@ def show_training_dashboard_view():
                     )
                 st.rerun()
         else:
-            if not os.path.exists(CHECKPOINT_FOLDER):
+            if not os.path.exists(config.CHECKPOINT_FOLDER):
                 return None
 
-            subdirs = [p for p in Path(CHECKPOINT_FOLDER).iterdir()]
+            subdirs = [p for p in Path(config.CHECKPOINT_FOLDER).iterdir()]
             if not subdirs:
                 return None
 

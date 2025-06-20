@@ -5,7 +5,9 @@ from typing import Optional
 from gemma import gm
 
 from backend.core.model import ModelFactory
-from config.training_config import CHECKPOINT_FOLDER, ModelConfig
+from config.app_config import get_config, ModelConfig
+
+config = get_config()
 
 
 class Inferencer:
@@ -20,9 +22,9 @@ class Inferencer:
 
     def _find_latest_checkpoint(self) -> Optional[str]:
         """Find the most recently created checkpoint directory."""
-        if not os.path.exists(CHECKPOINT_FOLDER):
+        if not os.path.exists(config.CHECKPOINT_FOLDER):
             return None
-        subdirs = [p for p in Path(CHECKPOINT_FOLDER).iterdir()]
+        subdirs = [p for p in Path(config.CHECKPOINT_FOLDER).iterdir()]
         if not subdirs:
             return None
 

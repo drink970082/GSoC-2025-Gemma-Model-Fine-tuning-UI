@@ -2,7 +2,7 @@ from typing import Any
 
 from gemma import gm
 
-from config.training_config import ModelConfig
+from config.app_config import ModelConfig
 
 
 class ModelFactory:

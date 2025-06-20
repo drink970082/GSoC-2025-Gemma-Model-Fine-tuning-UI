@@ -2,7 +2,7 @@ import sys
 
 from backend.core.trainer import ModelTrainer
 from backend.utils.cli import create_parser
-from config.training_config import DataConfig, ModelConfig
+from config.app_config import DataConfig, ModelConfig
 
 # This print statement will be the very first thing to run.
 print("trainer_main.py: Script execution started.")
