@@ -1,16 +1,17 @@
 import time
 
 import streamlit as st
-
-from backend.manager.global_manager import get_tensorboard_manager
-from config.training_config import DEFAULT_MODEL_CONFIG
+from backend.manager.global_manager import (
+    get_process_manager,
+    get_tensorboard_manager,
+)
 
 
 @st.fragment(run_every=1)
 def display_kpis():
     """Display the key performance indicators panel."""
     st.subheader("Key Performance Indicators")
-
+    process_manager = get_process_manager()
     # Get TensorBoard manager
     manager = get_tensorboard_manager()
 
@@ -57,8 +58,11 @@ def display_kpis():
     kpi_cols = st.columns(4)
 
     # Get model config for total steps
-    model_config = DEFAULT_MODEL_CONFIG
-    total_steps = int(model_config.get("epochs", 0))
+    model_config = process_manager.model_config
+    if model_config:
+        total_steps = int(model_config.get("epochs", 0))
+    else:
+        total_steps = 0
 
     # Get all values from manager
     latest_step = manager.get_current_step()

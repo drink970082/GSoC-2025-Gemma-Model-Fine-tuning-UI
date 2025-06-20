@@ -7,9 +7,15 @@ from typing import Literal, Optional
 
 import streamlit as st
 
-from config.training_config import (LOCK_FILE, STATUS_LOG, TENSORBOARD_LOGDIR,
-                                    TENSORBOARD_PORT, TRAINER_MAIN_PATH,
-                                    TRAINER_STDERR_LOG, TRAINER_STDOUT_LOG)
+from config.training_config import (
+    LOCK_FILE,
+    STATUS_LOG,
+    TENSORBOARD_LOGDIR,
+    TENSORBOARD_PORT,
+    TRAINER_MAIN_PATH,
+    TRAINER_STDERR_LOG,
+    TRAINER_STDOUT_LOG,
+)
 
 
 class ProcessManager:
@@ -18,8 +24,14 @@ class ProcessManager:
     def __init__(self):
         self.training_process: Optional[subprocess.Popen] = None
         self.tensorboard_process: Optional[subprocess.Popen] = None
+        self.data_config = None
+        self.model_config = None
 
-    def start_training(self, data_config, model_config):
+    def update_config(self, data_config, model_config):
+        self.data_config = data_config
+        self.model_config = model_config
+
+    def start_training(self):
         """
         Starts the training process in a subprocess.
         """
@@ -27,8 +39,12 @@ class ProcessManager:
             st.warning("Training is already in progress.")
             return
 
-        data_config_str = str(data_config)
-        model_config_str = str(model_config)
+        if not self.data_config or not self.model_config:
+            st.error("Data or model configuration is not set.")
+            return
+
+        data_config_str = str(self.data_config)
+        model_config_str = str(self.model_config)
 
         command = [
             "python",

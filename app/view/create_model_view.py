@@ -3,15 +3,11 @@ import time
 
 import streamlit as st
 
-from config.training_config import LOCK_FILE
 from app.components.create_model.config_summary import (
     show_configuration_preview,
 )
 from app.components.create_model.data_source_selector import (
     show_data_source_section,
-)
-from app.components.create_model.tuning_method_selector import (
-    show_fine_tuning_method_section,
 )
 from app.components.create_model.model_name_input import show_model_name_section
 from app.components.create_model.model_selector import (
@@ -20,10 +16,14 @@ from app.components.create_model.model_selector import (
 from app.components.create_model.start_training_button import (
     show_start_training_section,
 )
+from app.components.create_model.tuning_method_selector import (
+    show_fine_tuning_method_section,
+)
 from backend.manager.global_manager import (
     get_process_manager,
     get_tensorboard_manager,
 )
+from config.training_config import LOCK_FILE
 
 
 def show_create_model_view():
@@ -55,13 +55,12 @@ def show_create_model_view():
         process_manager = get_process_manager()
         tensorboard_manager = get_tensorboard_manager()
         tensorboard_manager.reset_training_time()
-        process_manager.start_training(
-            config["data_config"],
-            config["model_config"],
-        )
+        process_manager.update_config(config["data_config"], config["model_config"])
+        process_manager.start_training()
 
         # Set states to switch to the training dashboard
         st.session_state.session_started_by_app = True
+        st.session_state.model_config = config["model_config"]
         with st.spinner("Waiting for training process to initialize..."):
             start_time = time.time()
             while (

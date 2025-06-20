@@ -44,6 +44,35 @@ def update_status():
     st.info(f"Training in progress... Status: {status}")
 
 
+def shutdown_training():
+    process_manager = get_process_manager()
+    tensorboard_manager = get_tensorboard_manager()
+    with st.spinner(
+        "Shutdown requested. Waiting for processes to terminate...",
+        show_time=True,
+    ):
+        # Clear TensorBoard cache when stopping training
+        tensorboard_manager.clear_cache()
+        if process_manager.stop_all_processes():
+            st.session_state.shutdown_requested = True
+        elif process_manager.stop_all_processes(mode="force"):
+            st.session_state.shutdown_requested = True
+        else:
+            st.error(
+                "Failed to stop training processes. Please check the logs."
+            )
+    if st.session_state.shutdown_requested:
+        st.session_state.session_started_by_app = False
+        st.success(
+            "All processes have been shut down. Redirecting to welcome page..."
+        )
+        st.session_state.view = "welcome"
+        time.sleep(2)
+        st.rerun()
+    else:
+        st.error("Failed to stop training processes. Please check the logs.")
+
+
 def show_training_dashboard_view():
     """Display the training interface."""
     process_manager = get_process_manager()
@@ -55,12 +84,11 @@ def show_training_dashboard_view():
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
     is_currently_training = process_manager.is_training_running()
-    session_was_started_here = st.session_state.session_started_by_app
     print("--------------------------------")
     print("is_currently_training", is_currently_training)
-    print("session_was_started_here", session_was_started_here)
+    print("session_was_started_here", st.session_state.session_started_by_app)
 
-    if is_currently_training and not session_was_started_here:
+    if is_currently_training and not st.session_state.session_started_by_app:
         # State 1: Stale lock file detected
         st.warning(
             "A `training.lock` file was found from a previous session that may have crashed."
@@ -73,60 +101,18 @@ def show_training_dashboard_view():
             st.session_state.session_started_by_app = True
             st.rerun()
         if col2.button(
-            "Force Cleanup and Reset",
-            type="primary",
-            use_container_width=True,
+            "Abort Training", type="primary", use_container_width=True
         ):
-            if process_manager.stop_all_processes(mode="force"):
-                st.success(
-                    "Successfully cleaned up stale processes. Will reload in 3 seconds."
-                )
-                time.sleep(3)
-            else:
-                st.error(
-                    "Failed to clean up some processes. Please check the logs."
-                )
-            st.rerun()
+            shutdown_training()
 
-    elif st.session_state.shutdown_requested:
-        # State 2: Shutdown in progress
-        with st.spinner(
-            "Shutdown requested. Waiting for processes to terminate...",
-            show_time=True,
-        ):
-            if not is_currently_training:
-                st.session_state.shutdown_requested = False
-                st.session_state.session_started_by_app = False
-                st.rerun()
-            else:
-                time.sleep(1)
-                st.rerun()
-
-    elif is_currently_training and session_was_started_here:
+    elif is_currently_training and st.session_state.session_started_by_app:
         poll_training_status()
         # State 3: Training is actively in progress
         update_status()
         if st.button(
             "Abort Training", type="primary", use_container_width=True
         ):
-            with st.spinner(
-                "Shutdown requested. Waiting for processes to terminate...",
-                show_time=True,
-            ):
-                # Clear TensorBoard cache when stopping training
-                tensorboard_manager.clear_cache()
-                if process_manager.stop_all_processes():
-                    st.session_state.shutdown_requested = True
-                elif process_manager.stop_all_processes(mode="force"):
-                    st.session_state.shutdown_requested = True
-            if st.session_state.shutdown_requested:
-                st.success("All processes have been shut down.")
-                time.sleep(2)
-                st.rerun()
-            else:
-                st.error(
-                    "Failed to stop training processes. Please check the logs."
-                )
+            shutdown_training()
 
         st.divider()
 

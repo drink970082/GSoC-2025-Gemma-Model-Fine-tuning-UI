@@ -1,10 +1,8 @@
-import os
-import pickle
 from typing import Any
 
 from gemma import gm
 
-from config.training_config import CHECKPOINT_FOLDER, ModelConfig
+from config.training_config import ModelConfig
 
 
 class ModelFactory:
