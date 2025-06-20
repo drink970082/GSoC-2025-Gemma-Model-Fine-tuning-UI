@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from app.utils.tensorboard import get_tensorboard_manager
+from backend.manager.global_manager import get_tensorboard_manager
 
 
 @st.fragment(run_every=1)

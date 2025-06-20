@@ -3,20 +3,21 @@ import sys
 import traceback
 from pathlib import Path
 from typing import Any, Optional, Tuple
+import time
 
 import optax
-from orbax import checkpoint as ocp
 from data_pipeline import create_pipeline
-from kauldron import kd
 from gemma import gm
+from kauldron import kd
+from orbax import checkpoint as ocp
 
 from backend.core.loss import LossFactory
 from backend.core.model import ModelFactory
 from backend.core.sampler import SamplerFactory
-from backend.utils.manager.StatusManager import StatusManager
+from backend.manager.status_manager import StatusManager
 from config.training_config import (
+    CHECKPOINT_FOLDER,
     LOCK_FILE,
-    MODEL_ARTIFACT,
     DataConfig,
     ModelConfig,
 )
@@ -74,7 +75,10 @@ class ModelTrainer:
             state, aux = self.trainer.train()
             self.status_manager.update("Saving model...")
             ckpt = ocp.StandardCheckpointer()
-            ckpt.save(os.path.abspath("./checkpoints/"), state.params)
+            ckpt.save(
+                os.path.abspath(f"{CHECKPOINT_FOLDER}/{time.time()}"),
+                state.params,
+            )
             ckpt.wait_until_finished()
             return state, aux
 

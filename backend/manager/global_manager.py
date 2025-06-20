@@ -1,10 +1,21 @@
 import atexit
-from backend.utils.manager.ProcessManager import ProcessManager
-from backend.utils.manager.TensorboardManager import TensorBoardDataManager
+from backend.manager.process_manager import ProcessManager
+from backend.manager.tensorboard_manager import TensorBoardDataManager
+from backend.manager.status_manager import StatusManager
 
 # Global managers
 _process_manager = None
 _tensorboard_manager = None
+_status_manager = None
+
+
+def get_status_manager():
+    """Get or create global status manager."""
+    global _status_manager
+    if _status_manager is None:
+        _status_manager = StatusManager()
+        atexit.register(_status_manager.cleanup)
+    return _status_manager
 
 
 def get_process_manager():
@@ -33,3 +44,6 @@ def cleanup_managers():
     if _tensorboard_manager:
         _tensorboard_manager.clear_cache()
         _tensorboard_manager = None
+    if _status_manager:
+        _status_manager.cleanup()
+        _status_manager = None
