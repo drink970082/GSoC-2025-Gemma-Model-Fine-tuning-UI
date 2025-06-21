@@ -8,14 +8,11 @@ from backend.manager.global_manager import (
 
 
 @st.fragment(run_every=1)
-def display_kpis():
+def display_kpi_panel():
     """Display the key performance indicators panel."""
     st.subheader("Key Performance Indicators")
     process_manager = get_process_manager()
-    # Get TensorBoard manager
     manager = get_tensorboard_manager()
-
-    # Get all data from manager
     metadata = manager.get_metadata()
     latest_values = manager.get_latest_values()
 

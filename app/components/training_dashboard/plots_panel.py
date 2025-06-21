@@ -5,7 +5,7 @@ from backend.manager.global_manager import get_tensorboard_manager
 
 
 @st.fragment(run_every=1)
-def display_native_plots():
+def display_plots_panel():
     """Display the core performance plots panel."""
     st.subheader("Core Performance Plots")
 

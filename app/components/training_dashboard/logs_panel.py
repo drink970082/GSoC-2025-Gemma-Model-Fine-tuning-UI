@@ -8,7 +8,7 @@ config = get_config()
 
 
 @st.fragment(run_every=1)
-def display_live_logs():
+def display_logs_panel():
     """Display the live training logs panel as a code area with a score."""
     st.subheader("Live Training Logs")
     log_content = ""
