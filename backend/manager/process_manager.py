@@ -7,19 +7,31 @@ from typing import Literal, Optional
 
 import streamlit as st
 
+from backend.manager.base_manager import BaseManager
+from backend.manager.file_manager import FileManager
 from config.app_config import get_config
 
 config = get_config()
 
 
-class ProcessManager:
+class ProcessManager(BaseManager):
     """A class to manage background subprocesses and cleanup operations."""
 
     def __init__(self):
+        super().__init__()
+
+    def initialize(self, file_manager: FileManager) -> None:
+        """Initialize the ProcessManager."""
+        self._initialized = True
+        self.file_manager = file_manager
         self.training_process: Optional[subprocess.Popen] = None
-        self.tensorboard_process: Optional[subprocess.Popen] = None
         self.data_config = None
         self.model_config = None
+
+    def cleanup(self):
+        """Cleanup method called by atexit."""
+        print("ATEIXT: Shutting down background processes...")
+        self.stop_all_processes(mode="graceful")
 
     def get_training_model_config(self) -> dict | None:
         """Retrieves the model config for the current training run."""
@@ -41,7 +53,7 @@ class ProcessManager:
         """
         Starts the training process in a subprocess.
         """
-        if os.path.exists(config.LOCK_FILE):
+        if self.file_manager.lock_file.is_locked():
             st.warning("Training is already in progress.")
             return
 
@@ -62,48 +74,31 @@ class ProcessManager:
         ]
 
         try:
-            with open(config.TRAINER_STDOUT_LOG, "w") as f_out, open(
-                config.TRAINER_STDERR_LOG, "w"
-            ) as f_err:
-                self.training_process = subprocess.Popen(
-                    command, stdout=f_out, stderr=f_err
-                )
+            f_out, f_err = self.file_manager.log_files.open()
+            self.training_process = subprocess.Popen(
+                command, stdout=f_out, stderr=f_err
+            )
+            self.file_manager.lock_file.write(self.training_process.pid)
         except Exception as e:
             st.error(f"Failed to start the training subprocess: {e}")
+            self.file_manager.log_files.close()
             return
+
         time.sleep(2)
         if self.training_process.poll() is not None:
-            try:
-                with open(config.TRAINER_STDERR_LOG, "r") as f:
-                    error_output = f.read()
-                if error_output:
-                    st.error("The training process failed to start. Error:")
-                    st.code(error_output, language="bash")
-                else:
-                    st.error(
-                        "The training process failed to start with no error message."
-                    )
-            except FileNotFoundError:
+            error_output = self.file_manager.log_files.read_stderr()
+            if error_output:
+                st.error("The training process failed to start. Error:")
+                st.code(error_output, language="bash")
+            else:
                 st.error(
-                    "Could not read the error log file for the training process."
+                    "The training process failed to start with no error message."
                 )
 
-            if os.path.exists(config.LOCK_FILE):
-                os.remove(config.LOCK_FILE)
+            # Clean up lock file and close logs if process dies immediately
+            self.file_manager.lock_file.remove()
+            self.file_manager.log_files.close()
             return
-
-    def start_tensorboard(self):
-        if self.tensorboard_process and self.tensorboard_process.poll() is None:
-            return
-        command = [
-            "tensorboard",
-            "--logdir",
-            config.TENSORBOARD_LOGDIR,
-            "--port",
-            str(config.TENSORBOARD_PORT),
-        ]
-        self.tensorboard_process = subprocess.Popen(command)
-        time.sleep(5)
 
     def _terminate_process(
         self,
@@ -139,22 +134,6 @@ class ProcessManager:
             except subprocess.TimeoutExpired:
                 return False
 
-    def _clean_files(self):
-        """Clean up all temporary files."""
-        files_to_delete = [
-            config.LOCK_FILE,
-            config.STATUS_LOG,
-            config.TRAINER_STDOUT_LOG,
-            config.TRAINER_STDERR_LOG,
-        ]
-
-        for f in files_to_delete:
-            try:
-                if os.path.exists(f):
-                    os.remove(f)
-            except OSError as e:
-                print(f"Could not remove file {f}: {e}")
-
     def stop_all_processes(
         self, mode: Literal["graceful", "force"] = "graceful"
     ) -> bool:
@@ -170,9 +149,6 @@ class ProcessManager:
             training_stopped = self._terminate_process(
                 self.training_process, "Training", mode
             )
-            tensorboard_stopped = self._terminate_process(
-                self.tensorboard_process, "TensorBoard", mode
-            )
 
             if mode == "force":
                 # If in force mode, also try to kill any orphaned processes
@@ -180,24 +156,13 @@ class ProcessManager:
                     subprocess.run(
                         ["pkill", "-f", config.TRAINER_MAIN_PATH], check=False
                     )
-                    subprocess.run(["pkill", "-f", "tensorboard"], check=False)
                 except FileNotFoundError:
                     print(
                         "'pkill' command not found. Skipping orphaned process cleanup."
                     )
 
-            self._clean_files()
-            return training_stopped and tensorboard_stopped
+            self.file_manager.cleanup()
+            return training_stopped
         except Exception as e:
             print(f"Error stopping processes: {e}")
             return False
-
-    def cleanup(self):
-        """Cleanup method called by atexit."""
-        print("ATEIXT: Shutting down background processes...")
-        self.stop_all_processes(mode="graceful")
-
-    @staticmethod
-    def is_training_running() -> bool:
-        """Check if training is currently in progress by checking the lock file."""
-        return os.path.exists(config.LOCK_FILE)

@@ -52,3 +52,7 @@ tensorboard_logs/
 
 # checkpoints
 **checkpoints/
+
+# cursor
+.cursor/
+.cursorrules

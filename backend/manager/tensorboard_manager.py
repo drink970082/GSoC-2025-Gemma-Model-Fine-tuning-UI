@@ -1,5 +1,4 @@
 import json
-import os
 import time
 
 import numpy as np
@@ -8,42 +7,32 @@ from tensorboard.backend.event_processing.event_accumulator import (
     EventAccumulator,
 )
 
-from config.app_config import get_config
+from backend.manager.base_manager import BaseManager
+from backend.manager.file_manager import FileManager
 
-config = get_config()
 
-class TensorBoardDataManager:
+class TensorBoardManager(BaseManager):
     """Manages TensorBoard event data loading and caching."""
 
-    def __init__(
-        self, log_dir: str = config.TENSORBOARD_LOGDIR, ignore_timing: bool = False
-    ):
-        self.log_dir = log_dir
+    def __init__(self):
+        super().__init__()
+        self._manager_tracking_time = 0
         self._event_data = {}
+
+    def initialize(self, file_manager: FileManager):
+        self._initialized = True
+        self.file_manager = file_manager
         self._manager_tracking_time = time.time()
-        self.ignore_timing = (
-            ignore_timing  # Allow reading all files regardless of timing
-        )
+
+    def cleanup(self):
+        """Cleanup method called by atexit."""
+        self._manager_tracking_time = 0
+        self._event_data = {}
 
     def reset_training_time(self):
         """Reset the training start time to current time."""
         self._manager_tracking_time = time.time()
-        self.clear_cache()
-
-    def list_all_event_files(self) -> list[tuple[str, float, float]]:
-        """List all event files with their creation and modification times."""
-        event_files = []
-        for root, _, files in os.walk(self.log_dir):
-            for file in files:
-                if file.startswith("events.out.tfevents."):
-                    file_path = os.path.join(root, file)
-                    created_time = os.path.getctime(file_path)
-                    modified_time = os.path.getmtime(file_path)
-                    event_files.append((file_path, created_time, modified_time))
-
-        # Sort by modification time (newest first)
-        event_files.sort(key=lambda x: x[2], reverse=True)
-        return event_files
+        self._event_data = {}
 
     def examine_event_file(self, file_path: str) -> dict:
         """Examine a specific event file and return its contents."""
@@ -87,24 +76,13 @@ class TensorBoardDataManager:
         except Exception as e:
             return {"file_path": file_path, "error": str(e)}
 
-    def _find_latest_event_file(self) -> str:
-        """Find the latest event file in the log directory."""
-        event_files = self.list_all_event_files()
-
-        if not event_files:
-            return None
-
-        if self.ignore_timing:
-            # Return the most recently modified file
-            return event_files[0][0]
-        else:
-            # Only consider files created after manager initialization
-            relevant_files = [
-                file_path
-                for file_path, created_time, _ in event_files
-                if created_time >= self._manager_tracking_time
-            ]
-            return relevant_files[0] if relevant_files else None
+    def _find_latest_event_file(self) -> str | None:
+        """Find the latest event file using the FileManager."""
+        # The ignore_timing logic is now handled by passing since_time=0
+        since = 0 if self.ignore_timing else self._manager_tracking_time
+        return self.file_manager.tensorboard_file.find_latest_event_file(
+            since_time=since
+        )
 
     def _load_event_data(self) -> dict[str, pd.DataFrame]:
         """Load and parse event data from TensorBoard logs."""
@@ -475,7 +453,3 @@ class TensorBoardDataManager:
         return latest_values.get(
             "perf_stats/evals_along_train/avg_time_sec", 0.0
         )
-
-    def clear_cache(self):
-        """Clear cached data."""
-        self._event_data = {}
