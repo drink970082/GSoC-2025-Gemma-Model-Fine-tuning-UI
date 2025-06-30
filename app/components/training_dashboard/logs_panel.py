@@ -1,32 +1,21 @@
 import os
-
 import streamlit as st
-
 from config.app_config import get_config
+from services.training_service import TrainingService
 
 config = get_config()
 
 
 @st.fragment(run_every=1)
-def display_logs_panel():
+def display_logs_panel(training_service: TrainingService):
     """Display the live training logs panel as a code area with a score."""
     st.subheader("Live Training Logs")
-    log_content = ""
+    stdout, stderr = training_service.get_log_contents()
+    log_content = stdout or "Waiting for training process to start..."
     error_count = 0
-    try:
-        with open(config.TRAINER_STDOUT_LOG, "r") as f:
-            log_content += f.read()
-    except FileNotFoundError:
-        log_content += "Waiting for training process to start..."
+    if stderr:
+        log_content += "\n\n--- ERRORS ---\n" + stderr
+        error_count = stderr.lower().count("error")
 
-    if os.path.exists(config.TRAINER_STDERR_LOG):
-        with open(config.TRAINER_STDERR_LOG, "r") as f:
-            error_content = f.read()
-        if error_content:
-            log_content += "\n--- ERRORS ---\n" + error_content
-            error_count += error_content.lower().count("error")
-
-    # Score: count of 'error' lines in logs
-    error_score = log_content.lower().count("error")
-    st.metric("Error Count", error_score)
+    st.metric("Error Count", error_count)
     st.code(log_content, language="log", height=400)

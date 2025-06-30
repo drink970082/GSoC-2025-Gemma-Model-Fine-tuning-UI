@@ -212,7 +212,7 @@ class TensorBoardManager(BaseManager):
         else:
             return f"Shape: {list(tensor_proto.tensor_shape.dim)}, Dtype: {tensor_proto.dtype}"
 
-    def parse_parameter_summary(self, param_text: str) -> dict:
+    def _parse_parameter_summary(self, param_text: str) -> dict:
         """Parse parameter summary text and extract key information."""
         if not param_text or not isinstance(param_text, str):
             return {}
@@ -266,7 +266,7 @@ class TensorBoardManager(BaseManager):
 
         return result
 
-    def parse_element_spec(self, spec_text: str) -> dict:
+    def _parse_element_spec(self, spec_text: str) -> dict:
         """Parse element spec JSON format."""
         if not spec_text or not isinstance(spec_text, str):
             return {}
@@ -305,7 +305,7 @@ class TensorBoardManager(BaseManager):
 
         return {}
 
-    def parse_context_spec(self, spec_text: str) -> dict:
+    def _parse_context_spec(self, spec_text: str) -> dict:
         """Parse context spec table format."""
         if not spec_text or not isinstance(spec_text, str):
             return {}
@@ -343,57 +343,32 @@ class TensorBoardManager(BaseManager):
 
         return result
 
-    def get_parsed_metadata(self) -> dict:
-        """Get parsed metadata with all the parsed information."""
-        metadata = self.get_metadata()
-        parsed_data = {}
-
-        if "parameters" in metadata and metadata["parameters"]:
-            parsed_data["parameters"] = self.parse_parameter_summary(
-                str(metadata["parameters"])
-            )
-
-        if "element_spec" in metadata and metadata["element_spec"]:
-            parsed_data["element_spec"] = self.parse_element_spec(
-                str(metadata["element_spec"])
-            )
-
-        if "context_spec" in metadata and metadata["context_spec"]:
-            parsed_data["context_spec"] = self.parse_context_spec(
-                str(metadata["context_spec"])
-            )
-
-        # Add raw metadata
-        parsed_data["raw"] = metadata
-
-        return parsed_data
-
-    def get_data(self) -> dict[str, pd.DataFrame]:
+    def _get_data(self) -> dict[str, pd.DataFrame]:
         """Get current event data (always loads fresh data)."""
         self._event_data = self._load_event_data()
         return self._event_data
 
-    def get_metadata(self) -> dict[str, any]:
+    def _get_metadata(self) -> dict[str, any]:
         """Get metadata tensors only."""
-        data = self.get_data()
+        data = self._get_data()
         return {
             k: v.iloc[0]["value"] if not v.empty else None
             for k, v in data.items()
             if k in ["num_params", "parameters", "element_spec", "context_spec"]
         }
 
-    def get_training_metrics(self) -> dict[str, pd.DataFrame]:
+    def _get_training_metrics(self) -> dict[str, pd.DataFrame]:
         """Get training metrics only."""
-        data = self.get_data()
+        data = self._get_data()
         return {
             k: v
             for k, v in data.items()
             if k.startswith(("losses/", "perf_stats/"))
         }
 
-    def get_latest_values(self) -> dict[str, any]:
+    def _get_latest_values(self) -> dict[str, any]:
         """Get latest values for all training metrics."""
-        training_data = self.get_training_metrics()
+        training_data = self._get_training_metrics()
         latest_values = {}
 
         for metric_name, metric_df in training_data.items():
@@ -402,19 +377,44 @@ class TensorBoardManager(BaseManager):
 
         return latest_values
 
+    def get_parsed_metadata(self) -> dict:
+        """Get parsed metadata with all the parsed information."""
+        metadata = self._get_metadata()
+        parsed_data = {}
+
+        if "parameters" in metadata and metadata["parameters"]:
+            parsed_data["parameters"] = self._parse_parameter_summary(
+                str(metadata["parameters"])
+            )
+
+        if "element_spec" in metadata and metadata["element_spec"]:
+            parsed_data["element_spec"] = self._parse_element_spec(
+                str(metadata["element_spec"])
+            )
+
+        if "context_spec" in metadata and metadata["context_spec"]:
+            parsed_data["context_spec"] = self._parse_context_spec(
+                str(metadata["context_spec"])
+            )
+
+        # Add raw metadata
+        parsed_data["raw"] = metadata
+
+        return parsed_data
+
     def get_loss_metrics(self) -> dict[str, pd.DataFrame]:
         """Get loss metrics only."""
-        data = self.get_data()
+        data = self._get_data()
         return {k: v for k, v in data.items() if k.startswith("losses/")}
 
     def get_performance_metrics(self) -> dict[str, pd.DataFrame]:
         """Get performance metrics only."""
-        data = self.get_data()
+        data = self._get_data()
         return {k: v for k, v in data.items() if k.startswith("perf_stats/")}
 
     def get_current_step(self) -> int:
         """Get current training step."""
-        training_data = self.get_training_metrics()
+        training_data = self._get_training_metrics()
         if (
             "losses/loss" in training_data
             and not training_data["losses/loss"].empty
@@ -424,32 +424,45 @@ class TensorBoardManager(BaseManager):
 
     def get_current_loss(self) -> float:
         """Get current loss value."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("losses/loss", 0.0)
 
     def get_training_speed(self) -> float:
         """Get current training speed (steps/sec)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/steps_per_sec", 0.0)
 
     def get_training_time(self) -> float:
         """Get total training time (hours)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/total_training_time_hours", 0.0)
 
     def get_data_throughput(self) -> float:
         """Get data throughput (points/sec)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/data_points_per_sec_global", 0.0)
 
     def get_avg_step_time(self) -> float:
         """Get average step time (seconds)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/train/avg_time_sec", 0.0)
 
     def get_avg_eval_time(self) -> float:
         """Get average evaluation time (seconds)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get(
             "perf_stats/evals_along_train/avg_time_sec", 0.0
         )
+
+    def get_eta_str(self, total_steps: int) -> str:
+        """Get the estimated time remaining as a formatted string."""
+        training_speed = self.get_training_speed()
+        latest_step = self.get_current_step()
+
+        if training_speed > 0 and total_steps > 0:
+            remaining_steps = total_steps - latest_step
+            if remaining_steps > 0:
+                eta_seconds = remaining_steps / training_speed
+                return time.strftime("%H:%M:%S", time.gmtime(eta_seconds))
+
+        return "N/A"

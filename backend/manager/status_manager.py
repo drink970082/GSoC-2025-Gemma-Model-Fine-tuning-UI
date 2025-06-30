@@ -13,6 +13,10 @@ class StatusManager(BaseManager):
         self._initialized = True
         self.file_manager = file_manager
 
+    def cleanup(self):
+        """Cleanup the StatusManager."""
+        self.file_manager.status_file.remove()
+
     def update(self, message: str) -> None:
         """Update the status message in the status file."""
         self.file_manager.status_file.write(message)

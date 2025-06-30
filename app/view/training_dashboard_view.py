@@ -1,7 +1,3 @@
-import os
-import time
-from pathlib import Path
-
 import streamlit as st
 from app.components.training_dashboard.control_panel import (
     display_control_panel,
@@ -12,26 +8,24 @@ from app.components.training_dashboard.plots_panel import display_plots_panel
 from app.components.training_dashboard.system_usage_panel import (
     display_system_usage_panel,
 )
-from backend.manager.global_manager import get_tensorboard_manager
-from app.services.global_service import get_training_service
+from services.training_service import TrainingService
 from config.app_config import get_config
 
 config = get_config()
 
 
 @st.fragment(run_every=1)
-def update_tensorboard_event_loop():
+def update_tensorboard_event_loop(training_service: TrainingService):
     """Update TensorBoard data every second (separate from display fragments)."""
-    get_tensorboard_manager().get_data()
+    training_service.get_tensorboard_data()
 
 
 @st.fragment(run_every=1)
-def poll_training_status():
+def poll_training_status(training_service: TrainingService):
     """
     If training was active, this fragment checks if it has stopped.
     If so, it triggers a rerun to update the control panel to its terminal state.
     """
-    training_service = get_training_service()
     if (
         not training_service.is_training_running()
         and st.session_state.session_started_by_app
@@ -40,24 +34,26 @@ def poll_training_status():
         st.rerun()
 
 
-def show_training_dashboard_view():
+@st.fragment(run_every=1)
+def poll_system_usage_loop(training_service: TrainingService):
+    """Polls system usage every second."""
+    training_service.poll_system_usage()
+
+
+def show_training_dashboard_view(training_service: TrainingService):
     """Display the training interface."""
     st.title("LLM Fine-Tuning Dashboard")
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
-    poll_training_status()
-    update_tensorboard_event_loop()
+    poll_training_status(training_service)
+    update_tensorboard_event_loop(training_service)
     # Dashboard Panels
-    display_control_panel()
+    display_control_panel(training_service)
     st.divider()
-    display_kpi_panel()
+    display_kpi_panel(training_service)
     st.divider()
-    display_plots_panel()
+    display_plots_panel(training_service)
     st.divider()
-    display_system_usage_panel()
+    display_system_usage_panel(training_service)
     st.divider()
-    display_logs_panel()
-
-
-if __name__ == "__main__":
-    show_training_dashboard_view()
+    display_logs_panel(training_service)

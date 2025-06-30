@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 
 from config.app_config import get_config
 
-from .base_manager import BaseManager
+from backend.manager.base_manager import BaseManager
 
 config = get_config()
 
@@ -27,6 +28,7 @@ class FileManager(BaseManager):
         self.status_file = self.StatusFileManager()
         self.log_files = self.LogFileManager()
         self.tensorboard_file = self.TensorBoardFileManager()
+        self.checkpoint_file = self.CheckpointFileManager()
 
     def cleanup(self) -> None:
         """Clean up all managed files upon application exit."""
@@ -34,6 +36,7 @@ class FileManager(BaseManager):
         self.status_file.remove()
         self.log_files.remove()
         self.tensorboard_file.remove()
+        self.checkpoint_file.remove()
 
     # --- Helper Classes ---
 
@@ -125,6 +128,14 @@ class FileManager(BaseManager):
                 self.stderr_handle.close()
                 self.stderr_handle = None
 
+        def read_stdout(self) -> str:
+            """Reads the content of the standard output log file."""
+            try:
+                with open(config.TRAINER_STDOUT_LOG, "r") as f:
+                    return f.read()
+            except FileNotFoundError:
+                return ""
+
         def read_stderr(self) -> str:
             """Reads the content of the standard error log file."""
             try:
@@ -140,7 +151,26 @@ class FileManager(BaseManager):
                 os.remove(config.TRAINER_STDOUT_LOG)
             if os.path.exists(config.TRAINER_STDERR_LOG):
                 os.remove(config.TRAINER_STDERR_LOG)
-                
+
+    class CheckpointFileManager:
+        """Manages the checkpoint files."""
+
+        def find_latest_checkpoint(self) -> Path | None:
+            """Scans the checkpoint folder and returns the path to the latest one."""
+            checkpoint_folder = Path(config.CHECKPOINT_FOLDER)
+            if not checkpoint_folder.exists() or not checkpoint_folder.is_dir():
+                return None
+
+            subdirs = [p for p in checkpoint_folder.iterdir() if p.is_dir()]
+            if not subdirs:
+                return None
+
+            return max(subdirs, key=lambda p: p.stat().st_ctime)
+
+        def remove(self) -> None:
+            """Removes the checkpoint folder."""
+            pass
+
     class TensorBoardFileManager:
         """Manages finding and cleaning up TensorBoard event files."""
 
@@ -159,7 +189,7 @@ class FileManager(BaseManager):
                                 os.path.getmtime(file_path),
                             )
                         )
-            
+
             if not event_files:
                 return None
 
@@ -182,4 +212,3 @@ class FileManager(BaseManager):
             # For now, we don't delete the tensorboard logs automatically.
             # This can be implemented later if required.
             pass
-        

@@ -1,21 +1,19 @@
 import streamlit as st
 
 from backend.inferencer import Inferencer
-from backend.manager.global_manager import get_process_manager
 from config.app_config import ModelConfig
+from services.training_service import TrainingService
 
 
-def ensure_model_loaded() -> Inferencer | None:
+def ensure_model_loaded(training_service: TrainingService) -> Inferencer | None:
     """
     Initializes the Inferencer and ensures the model is loaded.
     Displays status messages to the user.
     Returns the service instance if loaded, otherwise None.
     """
     if "inference_service" not in st.session_state:
-        process_manager = get_process_manager()
-        st.session_state.inferencer = Inferencer(
-            ModelConfig(**process_manager.model_config)
-        )
+        model_config = training_service.get_model_config()
+        st.session_state.inferencer = Inferencer(ModelConfig(**model_config))
 
     service = st.session_state.inferencer
 

@@ -1,20 +1,16 @@
 import pandas as pd
 import streamlit as st
 
-from backend.manager.global_manager import get_tensorboard_manager
+from services.training_service import TrainingService
 
 
 @st.fragment(run_every=1)
-def display_plots_panel():
+def display_plots_panel(training_service: TrainingService):
     """Display the core performance plots panel."""
     st.subheader("Core Performance Plots")
 
-    # Get TensorBoard manager
-    manager = get_tensorboard_manager()
-
-    # Get data from manager
-    loss_metrics = manager.get_loss_metrics()
-    perf_metrics = manager.get_performance_metrics()
+    loss_metrics = training_service.get_loss_metrics()
+    perf_metrics = training_service.get_performance_metrics()
 
     if not loss_metrics and not perf_metrics:
         st.info("Waiting for first metric to be logged...")

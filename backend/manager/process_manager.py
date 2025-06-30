@@ -30,8 +30,9 @@ class ProcessManager(BaseManager):
 
     def cleanup(self):
         """Cleanup method called by atexit."""
-        print("ATEIXT: Shutting down background processes...")
-        self.stop_all_processes(mode="graceful")
+        self.terminate_process(
+            self.training_process, "training", mode="graceful"
+        )
 
     def get_training_model_config(self) -> dict | None:
         """Retrieves the model config for the current training run."""
@@ -100,7 +101,7 @@ class ProcessManager(BaseManager):
             self.file_manager.log_files.close()
             return
 
-    def _terminate_process(
+    def terminate_process(
         self,
         process: Optional[subprocess.Popen],
         name: str,
@@ -116,6 +117,7 @@ class ProcessManager(BaseManager):
         Returns:
             bool: True if process was terminated successfully
         """
+        terminated = True
         if not process or process.poll() is not None:
             return True
 
@@ -123,20 +125,18 @@ class ProcessManager(BaseManager):
             process.send_signal(signal.SIGINT)
             try:
                 process.wait(timeout=5)
-                return True
             except subprocess.TimeoutExpired:
                 return self._terminate_process(process, name, mode="force")
         else:
             try:
                 process.kill()
                 process.wait(timeout=2)
-                return True
             except subprocess.TimeoutExpired:
-                return False
+                terminated = False
+        self.file_manager.cleanup()
+        return terminated
 
-    def stop_all_processes(
-        self, mode: Literal["graceful", "force"] = "graceful"
-    ) -> bool:
+    def force_cleanup(self) -> bool:
         """Stop all managed processes and clean up files.
 
         Args:
@@ -146,23 +146,16 @@ class ProcessManager(BaseManager):
             bool: True if all processes were stopped successfully
         """
         try:
-            training_stopped = self._terminate_process(
-                self.training_process, "Training", mode
+            subprocess.run(
+                ["pkill", "-f", config.TRAINER_MAIN_PATH], check=False
+            )
+        except FileNotFoundError:
+            print(
+                "'pkill' command not found. Skipping orphaned process cleanup."
             )
 
-            if mode == "force":
-                # If in force mode, also try to kill any orphaned processes
-                try:
-                    subprocess.run(
-                        ["pkill", "-f", config.TRAINER_MAIN_PATH], check=False
-                    )
-                except FileNotFoundError:
-                    print(
-                        "'pkill' command not found. Skipping orphaned process cleanup."
-                    )
-
             self.file_manager.cleanup()
-            return training_stopped
+            return True
         except Exception as e:
             print(f"Error stopping processes: {e}")
             return False

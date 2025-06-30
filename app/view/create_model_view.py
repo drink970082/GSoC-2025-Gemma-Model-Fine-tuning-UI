@@ -16,10 +16,10 @@ from app.components.create_model.start_training_button import (
 from app.components.create_model.tuning_method_selector import (
     show_fine_tuning_method_section,
 )
-from app.services.global_service import get_training_service
+from services.training_service import TrainingService
 
 
-def show_create_model_view():
+def show_create_model_view(training_service: TrainingService):
     """Display the create model interface."""
     config = {}
     st.subheader("1. Model Name")
@@ -41,7 +41,6 @@ def show_create_model_view():
     st.divider()
     st.subheader("6. Start Training")
     if show_start_training_section(config):
-        training_service = get_training_service()
         training_service.start_training(config)
         st.session_state.session_started_by_app = True
         with st.spinner("Waiting for training process to initialize..."):
@@ -49,7 +48,3 @@ def show_create_model_view():
 
         st.session_state.view = "training_dashboard"
         st.rerun()
-
-
-if __name__ == "__main__":
-    show_create_model_view()

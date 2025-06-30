@@ -4,6 +4,7 @@ from typing import Any, Dict
 from backend.manager.file_manager import FileManager
 from backend.manager.process_manager import ProcessManager
 from backend.manager.status_manager import StatusManager
+from backend.manager.system_manager import SystemManager
 from backend.manager.tensorboard_manager import TensorBoardManager
 
 
@@ -85,22 +86,32 @@ class DIContainer:
         process_manager = ProcessManager()
         status_manager = StatusManager()
         tensorboard_manager = TensorBoardManager()
+        system_manager = SystemManager()
+
         # initialize managers
         file_manager.initialize()
         process_manager.initialize(file_manager=file_manager)
         status_manager.initialize(file_manager=file_manager)
         tensorboard_manager.initialize(file_manager=file_manager)
+        system_manager.initialize()
 
         # Register managers
         self.register("file_manager", file_manager)
         self.register("process_manager", process_manager)
         self.register("status_manager", status_manager)
         self.register("tensorboard_manager", tensorboard_manager)
+        self.register("system_manager", system_manager)
 
         # Create and register training service with container dependency
         from .training_service import TrainingService
 
-        training_service = TrainingService(self)
+        training_service = TrainingService(
+            process_manager=process_manager,
+            tensorboard_manager=tensorboard_manager,
+            status_manager=status_manager,
+            file_manager=file_manager,
+            system_manager=system_manager,
+        )
         self.register("training_service", training_service)
 
         # Register cleanup handler once during setup
@@ -110,6 +121,7 @@ class DIContainer:
 
     def _cleanup_all(self) -> None:
         """Cleanup all services that have cleanup methods."""
+        print("ATEIXT: Cleaning up all services...")
         for service in self._services.values():
             if hasattr(service, "cleanup"):
                 try:

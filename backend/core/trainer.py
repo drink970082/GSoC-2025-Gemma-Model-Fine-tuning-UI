@@ -1,9 +1,9 @@
 import os
 import sys
+import time
 import traceback
 from pathlib import Path
 from typing import Any, Optional, Tuple
-import time
 
 import optax
 from data_pipeline import create_pipeline
@@ -13,7 +13,8 @@ from orbax import checkpoint as ocp
 from backend.core.loss import LossFactory
 from backend.core.model import ModelFactory
 from backend.manager.status_manager import StatusManager
-from config.app_config import get_config, DataConfig, ModelConfig
+from backend.manager.file_manager import FileManager
+from config.app_config import DataConfig, ModelConfig, get_config
 
 config = get_config()
 
@@ -33,6 +34,7 @@ class ModelTrainer:
         self.pipeline = None
         self.model = None
         self.trainer = None
+        self.status_manager.initialize(file_manager=FileManager())
 
     def setup_environment(self) -> None:
         os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "1.00"
