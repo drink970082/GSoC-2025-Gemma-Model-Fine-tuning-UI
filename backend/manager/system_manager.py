@@ -19,11 +19,6 @@ class SystemManager(BaseManager):
             "gpu_temp": deque(maxlen=self._history_length),
             "cpu_util": deque(maxlen=self._history_length),
         }
-        self._is_nvml_initialized = False
-
-    def initialize(self) -> None:
-        """Initialize the NVML library if available."""
-        self._initialized = True
         try:
             pynvml.nvmlInit()
             self._is_nvml_initialized = True

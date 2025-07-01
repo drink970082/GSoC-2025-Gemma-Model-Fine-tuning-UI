@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import traceback
-from pathlib import Path
 from typing import Any, Optional, Tuple
 
 import optax
@@ -13,7 +12,6 @@ from orbax import checkpoint as ocp
 from backend.core.loss import LossFactory
 from backend.core.model import ModelFactory
 from backend.manager.status_manager import StatusManager
-from backend.manager.file_manager import FileManager
 from config.app_config import DataConfig, ModelConfig, get_config
 
 config = get_config()
@@ -26,15 +24,15 @@ class ModelTrainer:
         self,
         data_config: DataConfig,
         model_config: ModelConfig,
-        status_manager: Optional[StatusManager] = None,
     ):
         self.data_config = data_config
         self.model_config = model_config
-        self.status_manager = status_manager or StatusManager()
+        self.status_manager = StatusManager()
         self.pipeline = None
         self.model = None
         self.trainer = None
-        self.status_manager.initialize(file_manager=FileManager())
+        self.run_name = f"{self.model_config.model_variant}-{time.strftime('%Y%m%d_%H%M%S')}"
+        self.workdir = os.path.join(config.CHECKPOINT_FOLDER, self.run_name)
 
     def setup_environment(self) -> None:
         os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "1.00"
@@ -42,7 +40,7 @@ class ModelTrainer:
     def create_trainer(self, model: Any, train_ds: Any) -> kd.train.Trainer:
         return kd.train.Trainer(
             seed=42,
-            workdir="/tmp/ckpts/",
+            workdir=self.workdir,
             train_ds=train_ds,
             model=model,
             init_transform=ModelFactory.create_checkpoint(self.model_config),
@@ -59,9 +57,7 @@ class ModelTrainer:
         """Execute the training process."""
         state, aux = None, None
         try:
-            Path(config.LOCK_FILE).touch()
             self.status_manager.update("Initializing training...")
-
             self.setup_environment()
             self.pipeline = create_pipeline(self.data_config.__dict__)
             train_ds = self.pipeline.get_train_dataset()
@@ -73,7 +69,7 @@ class ModelTrainer:
             self.status_manager.update("Saving model...")
             ckpt = ocp.StandardCheckpointer()
             ckpt.save(
-                os.path.abspath(f"{config.CHECKPOINT_FOLDER}/{time.time()}"),
+                os.path.abspath(f"{self.workdir}/final"),
                 state.params,
             )
             ckpt.wait_until_finished()
@@ -85,7 +81,3 @@ class ModelTrainer:
             error_summary = error_traceback_str.strip().split("\n")[-1]
             self.status_manager.update(f"Error: {error_summary}")
             raise
-        finally:
-            if os.path.exists(config.LOCK_FILE):
-                os.remove(config.LOCK_FILE)
-            self.status_manager.cleanup()

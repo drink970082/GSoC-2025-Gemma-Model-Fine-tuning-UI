@@ -5,8 +5,8 @@ import streamlit as st
 from backend.manager.process_manager import ProcessManager
 from backend.manager.tensorboard_manager import TensorBoardManager
 from backend.manager.status_manager import StatusManager
-from backend.manager.file_manager import FileManager
 from backend.manager.system_manager import SystemManager
+from config.app_config import TrainingStatus
 
 
 class TrainingService:
@@ -19,14 +19,12 @@ class TrainingService:
         process_manager: ProcessManager,
         tensorboard_manager: TensorBoardManager,
         status_manager: StatusManager,
-        file_manager: FileManager,
         system_manager: SystemManager,
     ):
         """Initialize the training service with DI container."""
         self.process_manager = process_manager
         self.tensorboard_manager = tensorboard_manager
         self.status_manager = status_manager
-        self.file_manager = file_manager
         self.system_manager = system_manager
 
     def start_training(self, app_config: Dict[str, Any]) -> None:
@@ -46,7 +44,7 @@ class TrainingService:
     def wait_for_lock_file(self, timeout: int = 10) -> bool:
         """Wait for the lock file to be created."""
         for _ in range(timeout):
-            if self.file_manager.lock_file.is_locked():
+            if self.process_manager.is_lock_file_locked():
                 return True
             time.sleep(1)
         st.error("Training process did not start within timeout.")
@@ -73,7 +71,27 @@ class TrainingService:
         Checks if a training run is active by only checking for the lock file.
         This is the single source of truth for the application's training state.
         """
-        return self.file_manager.lock_file.is_locked()
+        status = self.process_manager.get_status()
+
+        if status == TrainingStatus.RUNNING:
+            return True
+
+        if status == TrainingStatus.ORPHANED:
+            st.warning(
+                "An orphaned training process from a previous session was detected. "
+                "Automatically cleaning up...."
+            )
+            self.process_manager.force_cleanup()
+            st.success("Cleanup complete. The application is now ready.")
+            time.sleep(2)
+            return False
+
+        if status == TrainingStatus.FINISHED:
+            st.info("Training process has completed. Cleaning up...")
+            self.process_manager.reset_state()
+            return False
+
+        return False
 
     def get_training_status(self) -> str:
         """Gets the latest status message from the training process."""
@@ -82,10 +100,6 @@ class TrainingService:
     def get_model_config(self) -> Optional[Dict[str, Any]]:
         """Retrieve the model configuration for the current training run."""
         return self.process_manager.get_training_model_config()
-
-    def get_latest_checkpoint(self) -> Optional[Path]:
-        """Get the latest checkpoint."""
-        return self.file_manager.checkpoint_file.find_latest_checkpoint()
 
     def get_kpi_data(self) -> dict:
         """
@@ -139,6 +153,6 @@ class TrainingService:
 
     def get_log_contents(self) -> tuple[str, str]:
         """Returns the contents of the stdout and stderr log files."""
-        stdout = self.file_manager.log_files.read_stdout()
-        stderr = self.file_manager.log_files.read_stderr()
+        stdout = self.process_manager.read_stdout_log()
+        stderr = self.process_manager.read_stderr_log()
         return stdout, stderr

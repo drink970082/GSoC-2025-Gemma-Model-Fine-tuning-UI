@@ -1,7 +1,6 @@
 import atexit
 from typing import Any, Dict
 
-from backend.manager.file_manager import FileManager
 from backend.manager.process_manager import ProcessManager
 from backend.manager.status_manager import StatusManager
 from backend.manager.system_manager import SystemManager
@@ -82,21 +81,11 @@ class DIContainer:
             return
 
         # Create managers
-        file_manager = FileManager()
         process_manager = ProcessManager()
         status_manager = StatusManager()
         tensorboard_manager = TensorBoardManager()
         system_manager = SystemManager()
 
-        # initialize managers
-        file_manager.initialize()
-        process_manager.initialize(file_manager=file_manager)
-        status_manager.initialize(file_manager=file_manager)
-        tensorboard_manager.initialize(file_manager=file_manager)
-        system_manager.initialize()
-
-        # Register managers
-        self.register("file_manager", file_manager)
         self.register("process_manager", process_manager)
         self.register("status_manager", status_manager)
         self.register("tensorboard_manager", tensorboard_manager)
@@ -109,7 +98,6 @@ class DIContainer:
             process_manager=process_manager,
             tensorboard_manager=tensorboard_manager,
             status_manager=status_manager,
-            file_manager=file_manager,
             system_manager=system_manager,
         )
         self.register("training_service", training_service)

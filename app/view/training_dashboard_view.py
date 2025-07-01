@@ -15,12 +15,6 @@ config = get_config()
 
 
 @st.fragment(run_every=1)
-def update_tensorboard_event_loop(training_service: TrainingService):
-    """Update TensorBoard data every second (separate from display fragments)."""
-    training_service.get_tensorboard_data()
-
-
-@st.fragment(run_every=1)
 def poll_training_status(training_service: TrainingService):
     """
     If training was active, this fragment checks if it has stopped.
@@ -32,12 +26,8 @@ def poll_training_status(training_service: TrainingService):
     ):
         st.session_state.session_started_by_app = False
         st.rerun()
-
-
-@st.fragment(run_every=1)
-def poll_system_usage_loop(training_service: TrainingService):
-    """Polls system usage every second."""
     training_service.poll_system_usage()
+    training_service.get_tensorboard_data()
 
 
 def show_training_dashboard_view(training_service: TrainingService):
@@ -46,7 +36,6 @@ def show_training_dashboard_view(training_service: TrainingService):
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
     poll_training_status(training_service)
-    update_tensorboard_event_loop(training_service)
     # Dashboard Panels
     display_control_panel(training_service)
     st.divider()

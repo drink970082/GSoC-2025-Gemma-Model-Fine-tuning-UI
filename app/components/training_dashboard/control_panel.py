@@ -2,6 +2,7 @@ import time
 import streamlit as st
 from services.training_service import TrainingService
 from config.app_config import get_config
+from pathlib import Path
 
 config = get_config()
 
@@ -49,6 +50,18 @@ def _create_next_step_buttons():
             st.rerun()
 
 
+def _find_latest_checkpoint():
+    checkpoint_folder = Path(config.CHECKPOINT_FOLDER)
+    if not checkpoint_folder.exists() or not checkpoint_folder.is_dir():
+        return None
+
+    subdirs = [p for p in checkpoint_folder.iterdir() if p.is_dir()]
+    if not subdirs:
+        return None
+
+    return max(subdirs, key=lambda p: p.stat().st_ctime)
+
+
 def display_control_panel(training_service: TrainingService):
     """
     Displays the main status and control panel at the top of the dashboard.
@@ -61,7 +74,7 @@ def display_control_panel(training_service: TrainingService):
         st.info(f"Training in progress... Status: {status}")
         _create_shutdown_button("Abort Training", training_service)
     else:
-        latest_checkpoint = training_service.get_latest_checkpoint()
+        latest_checkpoint = _find_latest_checkpoint()
         if "Error" in status:
             st.error(f"Training Failed: {status}")
             _create_shutdown_button("Reset Application", training_service)

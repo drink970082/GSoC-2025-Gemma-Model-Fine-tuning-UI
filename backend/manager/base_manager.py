@@ -7,12 +7,6 @@ class BaseManager(ABC):
 
     def __init__(self, config: Any = None):
         self.config = config
-        self._initialized = False
-
-    @abstractmethod
-    def initialize(self) -> None:
-        """Initialize resources (called once)."""
-        pass
 
     @abstractmethod
     def cleanup(self) -> None:
