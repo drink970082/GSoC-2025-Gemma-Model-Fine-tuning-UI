@@ -19,7 +19,8 @@ def main():
     try:
         data_config = DataConfig(**args.data_config)
         model_config = ModelConfig(**args.model_config)
-        trainer = ModelTrainer(data_config, model_config)
+        work_dir = args.work_dir
+        trainer = ModelTrainer(data_config, model_config, work_dir)
         trainer.train()
     except Exception as e:
         print(

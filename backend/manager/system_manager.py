@@ -80,10 +80,12 @@ class SystemManager(BaseManager):
     def get_history_as_dataframes(self) -> dict:
         """Returns the history as a dictionary of Pandas DataFrames for charting."""
         return {
-            "CPU Utilization (%)": pd.DataFrame(self.history["cpu_util"]),
-            "GPU Utilization (%)": pd.DataFrame(self.history["gpu_util"]),
-            "GPU Memory (GB)": pd.DataFrame(self.history["gpu_mem"]),
-            "GPU Temperature (°C)": pd.DataFrame(self.history["gpu_temp"]),
+            "CPU Utilization (%)": pd.DataFrame(list(self.history["cpu_util"])),
+            "GPU Utilization (%)": pd.DataFrame(list(self.history["gpu_util"])),
+            "GPU Memory (GB)": pd.DataFrame(list(self.history["gpu_mem"])),
+            "GPU Temperature (°C)": pd.DataFrame(
+                list(self.history["gpu_temp"])
+            ),
         }
 
     def has_gpu(self) -> bool:

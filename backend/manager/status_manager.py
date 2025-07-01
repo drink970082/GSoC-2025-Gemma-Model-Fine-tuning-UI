@@ -14,8 +14,7 @@ class StatusManager(BaseManager):
 
     def cleanup(self):
         """Removes the status log file."""
-        if os.path.exists(self.status_file_path):
-            os.remove(self.status_file_path)
+        pass
 
     def update(self, message: str) -> None:
         """Update the status message in the status file."""
@@ -32,3 +31,11 @@ class StatusManager(BaseManager):
                 return f.read().strip()
         except FileNotFoundError:
             return "Initializing"
+
+    def set_work_dir(self, work_dir: str) -> None:
+        """Set the work directory and derive file paths."""
+        super().set_work_dir(work_dir)
+        if work_dir:
+            self.status_file_path = os.path.join(work_dir, config.STATUS_LOG)
+        else:
+            self.status_file_path = None

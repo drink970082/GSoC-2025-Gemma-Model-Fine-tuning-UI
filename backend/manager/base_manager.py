@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+import os
 
 
 class BaseManager(ABC):
@@ -7,6 +8,7 @@ class BaseManager(ABC):
 
     def __init__(self, config: Any = None):
         self.config = config
+        self.work_dir = None
 
     @abstractmethod
     def cleanup(self) -> None:
@@ -19,3 +21,9 @@ class BaseManager(ABC):
             "initialized": self._initialized,
             "manager": self.__class__.__name__,
         }
+
+    def set_work_dir(self, work_dir: str) -> None:
+        """set the work directory."""
+        # We must create the work_dir if it doesn't exist
+        os.makedirs(work_dir, exist_ok=True)
+        self.work_dir = work_dir

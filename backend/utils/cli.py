@@ -16,4 +16,5 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_config", type=parse_dict_arg, required=True)
     parser.add_argument("--model_config", type=parse_dict_arg, required=True)
+    parser.add_argument("--work_dir", type=str, required=True)
     return parser

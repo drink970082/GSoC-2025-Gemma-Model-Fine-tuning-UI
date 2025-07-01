@@ -24,6 +24,7 @@ class ModelTrainer:
         self,
         data_config: DataConfig,
         model_config: ModelConfig,
+        work_dir: str,
     ):
         self.data_config = data_config
         self.model_config = model_config
@@ -31,8 +32,7 @@ class ModelTrainer:
         self.pipeline = None
         self.model = None
         self.trainer = None
-        self.run_name = f"{self.model_config.model_variant}-{time.strftime('%Y%m%d_%H%M%S')}"
-        self.workdir = os.path.join(config.CHECKPOINT_FOLDER, self.run_name)
+        self.workdir = work_dir
 
     def setup_environment(self) -> None:
         os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "1.00"
@@ -69,7 +69,7 @@ class ModelTrainer:
             self.status_manager.update("Saving model...")
             ckpt = ocp.StandardCheckpointer()
             ckpt.save(
-                os.path.abspath(f"{self.workdir}/final"),
+                os.path.abspath(f"{self.workdir}/final_checkpoint"),
                 state.params,
             )
             ckpt.wait_until_finished()

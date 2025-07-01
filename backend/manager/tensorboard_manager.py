@@ -491,3 +491,8 @@ class TensorBoardManager(BaseManager):
                 return time.strftime("%H:%M:%S", time.gmtime(eta_seconds))
 
         return "N/A"
+
+    def set_work_dir(self, work_dir: str) -> None:
+        """Set the work directory for TensorBoard logs."""
+        super().set_work_dir(work_dir)
+        self.tensorboard_log_dir = work_dir

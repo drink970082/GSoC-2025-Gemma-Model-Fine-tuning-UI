@@ -1,4 +1,5 @@
 import time
+import os
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
 import streamlit as st
@@ -7,6 +8,9 @@ from backend.manager.tensorboard_manager import TensorBoardManager
 from backend.manager.status_manager import StatusManager
 from backend.manager.system_manager import SystemManager
 from config.app_config import TrainingStatus
+from config.app_config import get_config
+
+config = get_config()
 
 
 class TrainingService:
@@ -26,6 +30,7 @@ class TrainingService:
         self.tensorboard_manager = tensorboard_manager
         self.status_manager = status_manager
         self.system_manager = system_manager
+        self.work_dir = None
 
     def start_training(self, app_config: Dict[str, Any]) -> None:
         """
@@ -38,6 +43,7 @@ class TrainingService:
         self.process_manager.update_config(
             app_config["data_config"], app_config["model_config"]
         )
+        self._set_work_dir(app_config["model_config"])
         self.tensorboard_manager.reset_training_time()
         self.process_manager.start_training()
 
@@ -60,6 +66,7 @@ class TrainingService:
             processes_stopped = self.process_manager.terminate_process(
                 mode=mode
             )
+            self._reset_work_dir()
             self.tensorboard_manager.reset_training_time()
             return processes_stopped
         except Exception as e:
@@ -156,3 +163,20 @@ class TrainingService:
         stdout = self.process_manager.read_stdout_log()
         stderr = self.process_manager.read_stderr_log()
         return stdout, stderr
+
+    def _set_work_dir(self, model_config: Dict[str, Any]) -> None:
+        """Updates the work directory with the model configuration."""
+        self.work_dir = (
+            f"{model_config['model_variant']}-{time.strftime('%Y%m%d_%H%M%S')}"
+        )
+        self.work_dir = os.path.join(config.CHECKPOINT_FOLDER, self.work_dir)
+        self.process_manager.set_work_dir(self.work_dir)
+        self.tensorboard_manager.set_work_dir(self.work_dir)
+        self.status_manager.set_work_dir(self.work_dir)
+
+    def _reset_work_dir(self) -> None:
+        """Resets the work directory."""
+        self.work_dir = None
+        self.process_manager.set_work_dir(self.work_dir)
+        self.tensorboard_manager.set_work_dir(self.work_dir)
+        self.status_manager.set_work_dir(self.work_dir)

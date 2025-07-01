@@ -20,8 +20,8 @@ class ProcessManager(BaseManager):
         self.model_config = None
         # Paths for managed files
         self.lock_file_path = config.LOCK_FILE
-        self.stdout_log_path = config.TRAINER_STDOUT_LOG
-        self.stderr_log_path = config.TRAINER_STDERR_LOG
+        self.stdout_log_path = None
+        self.stderr_log_path = None
         # File handles
         self._log_stdout_handle = None
         self._log_stderr_handle = None
@@ -46,6 +46,10 @@ class ProcessManager(BaseManager):
         """
         Starts the training process in a subprocess.
         """
+        if not self.work_dir:
+            st.error("Work directory is not set.")
+            return
+
         if self.is_lock_file_locked():
             st.warning("Detected a lock file...")
             pid = self._read_lock_file()
@@ -72,6 +76,8 @@ class ProcessManager(BaseManager):
             data_config_str,
             "--model_config",
             model_config_str,
+            "--work_dir",
+            self.work_dir,
         ]
 
         try:
@@ -82,7 +88,6 @@ class ProcessManager(BaseManager):
             self._write_lock_file(self.training_process.pid)
         except Exception as e:
             st.error(f"Failed to start the training subprocess: {e}")
-            self._cleanup_files()
             return
 
         time.sleep(2)
@@ -97,7 +102,7 @@ class ProcessManager(BaseManager):
                 )
 
             # Clean up lock file and close logs if process dies immediately
-            self._cleanup_files()
+            self.reset_state()
             return
 
     def terminate_process(
@@ -106,24 +111,19 @@ class ProcessManager(BaseManager):
     ) -> bool:
         """Terminate a process either gracefully or forcefully."""
         terminated = True
-        if (
-            not self.training_process
-            or self.training_process.poll() is not None
-        ):
-            return True
-
-        if mode == "graceful":
-            self.training_process.send_signal(signal.SIGINT)
-            try:
-                self.training_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                return self.terminate_process(mode="force")
-        else:
-            try:
-                self.training_process.kill()
-                self.training_process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                terminated = False
+        if self.training_process and self.training_process.poll() is None:
+            if mode == "graceful":
+                self.training_process.send_signal(signal.SIGINT)
+                try:
+                    self.training_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    return self.terminate_process(mode="force")
+            else:
+                try:
+                    self.training_process.kill()
+                    self.training_process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    terminated = False
         self.reset_state()
         return terminated
 
@@ -225,19 +225,6 @@ class ProcessManager(BaseManager):
         except FileNotFoundError:
             return ""
 
-    def _remove_log_files(self) -> None:
-        """Removes the training log files."""
-        self._close_log_files()
-        if os.path.exists(self.stdout_log_path):
-            os.remove(self.stdout_log_path)
-        if os.path.exists(self.stderr_log_path):
-            os.remove(self.stderr_log_path)
-
-    def _cleanup_files(self) -> None:
-        """Cleans up the training log files."""
-        self._remove_log_files()
-        self._remove_lock_file()
-
     def get_status(self) -> TrainingStatus:
         """
         Investigates the lock file and OS to give a definitive status.
@@ -270,7 +257,23 @@ class ProcessManager(BaseManager):
         Performs a full cleanup of files and resets the manager's
         internal state to idle.
         """
-        self._cleanup_files()
+        self._close_log_files()
+        self._remove_lock_file()
         self.training_process = None
         self.data_config = None
         self.model_config = None
+        self.work_dir = None
+
+    def set_work_dir(self, work_dir: str) -> None:
+        """Set the work directory and derive file paths."""
+        super().set_work_dir(work_dir)
+        if work_dir:
+            self.stdout_log_path = os.path.join(
+                work_dir, config.TRAINER_STDOUT_LOG
+            )
+            self.stderr_log_path = os.path.join(
+                work_dir, config.TRAINER_STDERR_LOG
+            )
+        else:
+            self.stdout_log_path = None
+            self.stderr_log_path = None
