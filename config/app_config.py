@@ -1,30 +1,6 @@
 import os
-from dataclasses import dataclass
+
 from enum import Enum, auto
-
-
-@dataclass
-class ModelConfig:
-    """Configuration for the model training."""
-
-    model_variant: str
-    epochs: int
-    learning_rate: float
-    batch_size: int
-
-
-@dataclass
-class DataConfig:
-    """Configuration for the data pipeline."""
-
-    source: str
-    dataset_name: str
-    split: str
-    shuffle: bool
-    seq2seq_in_prompt: str
-    seq2seq_in_response: str
-    seq2seq_max_length: int
-    seq2seq_truncate: bool
 
 
 class TrainingStatus(Enum):

@@ -12,7 +12,8 @@ from orbax import checkpoint as ocp
 from backend.core.loss import LossFactory
 from backend.core.model import ModelFactory
 from backend.manager.status_manager import StatusManager
-from config.app_config import DataConfig, ModelConfig, get_config
+from config.dataclass import TrainingConfig
+from config.app_config import get_config
 
 config = get_config()
 
@@ -20,14 +21,8 @@ config = get_config()
 class ModelTrainer:
     """Main class for handling the model training process."""
 
-    def __init__(
-        self,
-        data_config: DataConfig,
-        model_config: ModelConfig,
-        work_dir: str,
-    ):
-        self.data_config = data_config
-        self.model_config = model_config
+    def __init__(self, training_config: TrainingConfig, work_dir: str):
+        self.training_config = training_config
         self.status_manager = StatusManager()
         self.pipeline = None
         self.model = None
@@ -50,7 +45,9 @@ class ModelTrainer:
             workdir=self.workdir,
             train_ds=train_ds,
             model=model,
-            init_transform=ModelFactory.create_checkpoint(self.model_config),
+            init_transform=ModelFactory.create_base_checkpoint(
+                self.model_config
+            ),
             num_train_steps=self.model_config.epochs,
             train_losses={"loss": LossFactory.create_loss()},
             optimizer=optax.adafactor(

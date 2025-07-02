@@ -13,9 +13,15 @@ class ModelFactory:
         """Create the model instance."""
         model_class = getattr(gm.nn, config.model_variant)
         return model_class(tokens="batch.input")
+    
+    @staticmethod
+    def create_lora_model(config: ModelConfig) -> Any:
+        """Create the model instance."""
+        model_class = getattr(gm.nn, config.model_variant)
+        return model_class(tokens="batch.input")
 
     @staticmethod
-    def create_checkpoint(config: ModelConfig) -> Any:
+    def create_base_checkpoint(config: ModelConfig) -> Any:
         """Create the model checkpoint."""
         checkpoint_path = getattr(
             gm.ckpts.CheckpointPath, (config.model_variant + "_IT").upper()

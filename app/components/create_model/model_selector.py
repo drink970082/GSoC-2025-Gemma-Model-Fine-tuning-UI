@@ -1,14 +1,15 @@
 import streamlit as st
 
 from config.app_config import get_config
+from config.dataclass import ModelConfig
 
 config = get_config()
 
 
-def show_model_selection_section():
+def show_model_selection_section() -> ModelConfig:
     """Display the model selection and task type section."""
-    model_config = {}
-    model_config["model_variant"] = st.selectbox(
+
+    model_variant = st.selectbox(
         "Select Gemma Model",
         list(config.MODEL_INFO.keys()),
         index=0,
@@ -16,7 +17,7 @@ def show_model_selection_section():
     )
 
     # Model information
-    model = config.MODEL_INFO[model_config["model_variant"]]
+    model = config.MODEL_INFO[model_variant]
     st.info(
         f"""
         - Size: {model['size']}
@@ -43,9 +44,9 @@ def show_model_selection_section():
 
     # Training parameters
     st.subheader("Training Parameters")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns(2)
     with col1:
-        model_config["epochs"] = st.number_input(
+        epochs = st.number_input(
             "Number of Epochs",
             min_value=1,
             value=100,
@@ -53,15 +54,7 @@ def show_model_selection_section():
             help="Enter the total number of training epochs.",
         )
     with col2:
-        model_config["batch_size"] = st.slider(
-            "Batch Size",
-            min_value=1,
-            max_value=32,
-            value=4,
-            help="Select the number of samples to process in each batch.",
-        )
-    with col3:
-        model_config["learning_rate"] = st.slider(
+        learning_rate = st.slider(
             "Learning Rate",
             min_value=1e-6,
             max_value=1e-3,
@@ -70,4 +63,8 @@ def show_model_selection_section():
             format="%e",
             help="Set the learning rate. Small values like 1e-4 or 1e-5 are common.",
         )
-    return model_config
+    return ModelConfig(
+        model_variant=model_variant,
+        epochs=epochs,
+        learning_rate=learning_rate,
+    )

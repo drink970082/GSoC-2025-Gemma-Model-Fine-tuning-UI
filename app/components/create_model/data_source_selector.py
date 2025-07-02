@@ -7,44 +7,45 @@ import streamlit.components.v1 as components
 import treescope
 
 from backend.data_pipeline import create_pipeline
+from config.dataclass import DataConfig
 
 
-def show_data_source_section():
+def show_data_source_section() -> DataConfig:
     """Display the data source selection and configuration."""
     data_source = st.radio(
         "Select Data Source",
         ["HuggingFace Dataset", "TensorFlow Dataset", "Custom JSON Upload"],
     )
-
-    # Common data options
-    data_config = {}
+    dataset_name: str = ""
+    dataset_config: str | None = None
+    split: str | None = None
 
     if data_source == "HuggingFace Dataset":
-        data_config["source"] = "huggingface"
-        data_config["dataset_name"] = st.text_input(
+        source = "huggingface"
+        dataset_name = st.text_input(
             "Dataset Name",
             placeholder="e.g., google/fleurs, open-r1/Mixture-of-Thoughts",
             value="fka/awesome-chatgpt-prompts",
         )
-        data_config["dataset_config"] = st.text_input(
+        dataset_config = st.text_input(
             "Dataset Config",
             help="Optional: Specify dataset-specific config (like language/domain). Leave empty for default 'main' config.",
             placeholder="e.g., hi_in, code",
         )
-        data_config["split"] = st.text_input(
+        split = st.text_input(
             "Split (e.g., 'train', 'train[:80%]', 'train[80%:]')",
             help="Optional: Specify dataset split. Leave empty for default 'train' split.",
             placeholder="e.g., train, train[:80%], train[80%:]",
         )
 
     elif data_source == "TensorFlow Dataset":
-        data_config["source"] = "tensorflow"
-        data_config["dataset_name"] = st.text_input(
+        source = "tensorflow"
+        dataset_name = st.text_input(
             "TensorFlow Dataset Name",
             placeholder="e.g., mtnt, mtnt/en-fr",
             value="mtnt",
         )
-        data_config["split"] = st.text_input(
+        split = st.text_input(
             "Split (e.g., 'train', 'train[:80%]', 'train[80%:]')",
             value="train",
             help="Optional: Specify dataset split. Leave empty for default 'train' split.",
@@ -52,7 +53,7 @@ def show_data_source_section():
         )
 
     else:  # Custom JSON Upload
-        data_config["source"] = "json"
+        source = "json"
         uploaded_file = st.file_uploader(
             "Upload JSON file",
             type=["json"],
@@ -73,7 +74,7 @@ def show_data_source_section():
                     encoding="utf-8",
                 ) as temp_file:
                     json.dump(data, temp_file)
-                    data_config["data_path"] = temp_file.name
+                    dataset_name = temp_file.name
 
             except json.JSONDecodeError as e:
                 st.error(
@@ -82,11 +83,21 @@ def show_data_source_section():
             except Exception as e:
                 st.error(f"An error occurred: {e}")
 
-    data_config["shuffle"] = st.checkbox(
-        "Shuffle Dataset",
-        value=True,
-        help="Whether to shuffle the dataset before training",
-    )
+    col1, col2 = st.columns(2)
+    with col1:
+        shuffle = st.checkbox(
+            "Shuffle Dataset",
+            value=True,
+            help="Whether to shuffle the dataset before training",
+        )
+    with col2:
+        batch_size = st.slider(
+            "Batch Size",
+            min_value=1,
+            max_value=32,
+            value=4,
+            help="Select the number of samples to process in each batch.",
+        )
 
     # Universal Sequence-to-Sequence Parameters
     with st.expander(
@@ -94,12 +105,12 @@ def show_data_source_section():
     ):
         col1, col2 = st.columns(2)
         with col1:
-            data_config["seq2seq_in_prompt"] = st.text_input(
+            seq2seq_in_prompt = st.text_input(
                 "Source Field Name",
                 value="src",
                 help="Field name for source text (prompt) in the dataset",
             )
-            data_config["seq2seq_max_length"] = st.number_input(
+            seq2seq_max_length = st.number_input(
                 "Maximum Sequence Length",
                 min_value=1,
                 max_value=512,
@@ -107,22 +118,32 @@ def show_data_source_section():
                 help="Maximum length of input sequences",
             )
         with col2:
-            data_config["seq2seq_in_response"] = st.text_input(
+            seq2seq_in_response = st.text_input(
                 "Target Field Name",
                 value="dst",
                 help="Field name for target text (response) in the dataset",
             )
-            data_config["seq2seq_truncate"] = st.checkbox(
+            seq2seq_truncate = st.checkbox(
                 "Truncate Long Sequences",
                 value=True,
                 help="Whether to truncate sequences longer than max_length",
             )
-
+    data_config = DataConfig(
+        source=source,
+        dataset_name=dataset_name,
+        config=dataset_config,
+        split=split.strip() if split else "train",
+        shuffle=shuffle,
+        batch_size=batch_size,
+        seq2seq_in_prompt=seq2seq_in_prompt,
+        seq2seq_in_response=seq2seq_in_response,
+        seq2seq_max_length=seq2seq_max_length,
+        seq2seq_truncate=seq2seq_truncate,
+    )
     # Dataset Preview Section
     if st.button("Preview Dataset", type="secondary"):
         # Create pipeline and load data
         pipeline = create_pipeline(data_config)
-        print(data_config)
 
         tab1, tab2 = st.tabs(["Raw Data Preview", "Tokenized Output Preview"])
         with tab1:
@@ -132,14 +153,12 @@ def show_data_source_section():
                     raw_examples = pipeline.get_raw_preview(num_records=5)
                     src_texts = [
                         text.decode("utf-8")
-                        for text in raw_examples[
-                            data_config["seq2seq_in_prompt"]
-                        ]
+                        for text in raw_examples[data_config.seq2seq_in_prompt]
                     ]
                     dst_texts = [
                         text.decode("utf-8")
                         for text in raw_examples[
-                            data_config["seq2seq_in_response"]
+                            data_config.seq2seq_in_response
                         ]
                     ]
 
@@ -225,4 +244,4 @@ def show_data_source_section():
             except Exception as e:
                 st.error(e)
 
-    return data_source, data_config
+    return data_config
