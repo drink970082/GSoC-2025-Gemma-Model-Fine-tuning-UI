@@ -13,18 +13,19 @@ config = get_config()
 class Inferencer:
     """Service for running inference with trained models."""
 
-    def __init__(self, model_config: ModelConfig):
+    def __init__(self, model_config: ModelConfig, work_dir: str):
         self.model_config: ModelConfig = model_config
         self.model = None
         self.params = None
         self.tokenizer = None
         self._loaded = False
+        self.work_dir = work_dir
 
     def _find_latest_checkpoint(self) -> Optional[str]:
         """Find the most recently created checkpoint directory."""
-        if not os.path.exists(config.CHECKPOINT_FOLDER):
+        if not os.path.exists(self.work_dir):
             return None
-        subdirs = [p for p in Path(config.CHECKPOINT_FOLDER).iterdir()]
+        subdirs = [p for p in Path(self.work_dir).iterdir()]
         if not subdirs:
             return None
 

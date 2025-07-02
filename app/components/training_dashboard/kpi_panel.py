@@ -17,15 +17,35 @@ def display_kpi_panel(training_service: TrainingService):
         st.info("Waiting for training data...")
         return
 
+    if has_metadata:
+        st.markdown("#### Model Information")
+        metadata_cols = st.columns(3)
+        metadata_cols[0].metric(
+            "Total Parameters", f"{kpi_data.get('total_params', 0):,d}"
+        )
+        metadata_cols[1].metric(
+            "Total Memory (GB)",
+            round(kpi_data.get("total_bytes", 0) / 1024**3, 4),
+        )
+        metadata_cols[2].metric(
+            "Transformer Layers", len(kpi_data.get("layers", 0))
+        )
+
     if is_training:
         st.markdown("#### Training Progress")
         kpi_cols = st.columns(4)
-        total_steps = kpi_data.get("total_steps", 0)
-        current_step = kpi_data.get("current_step", 0)
+        total_steps = int(kpi_data.get("total_steps", 0))
+        current_step = int(kpi_data.get("current_step", 0))
         step_str = (
             f"{current_step}/{total_steps}"
             if total_steps > 0
-            else str(current_step)
+            else str(int(current_step))
+        )
+        training_time_seconds = int(kpi_data.get("training_time", 0) * 3600)
+        training_time_str = (
+            f"{training_time_seconds // 3600:02d}:{training_time_seconds % 3600 // 60:02d}:{training_time_seconds % 60:02d}"
+            if training_time_seconds > 0
+            else "00:00:00"
         )
 
         kpi_cols[0].metric("Global Step", step_str)
@@ -36,15 +56,13 @@ def display_kpi_panel(training_service: TrainingService):
             "Training Speed",
             f"{kpi_data.get('training_speed', 0.0):.2f} steps/sec",
         )
-        kpi_cols[3].metric(
-            "Training Time", kpi_data.get("training_time", "00:00:00")
-        )
+        kpi_cols[3].metric("Training Time", training_time_str)
 
         st.markdown("#### Performance Metrics")
         perf_cols = st.columns(4)
         perf_cols[0].metric(
             "Data Throughput",
-            f"{kpi_data.get('data_throughput', 0.0):.0f} samples/sec",
+            f"{kpi_data.get('data_throughput', 0.0):.0f} tokens/sec",
         )
         perf_cols[1].metric("ETA", kpi_data.get("eta_str", "N/A"))
         perf_cols[2].metric(
@@ -53,7 +71,3 @@ def display_kpi_panel(training_service: TrainingService):
         perf_cols[3].metric(
             "Avg Eval Time", f"{kpi_data.get('avg_eval_time', 0.0):.3f}s"
         )
-
-    elif has_metadata:
-        # If we have metadata but training hasn't started, show a clear message.
-        st.info("Waiting for training to start to show progress KPIs...")

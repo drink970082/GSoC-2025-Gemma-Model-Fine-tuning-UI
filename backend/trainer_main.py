@@ -28,6 +28,9 @@ def main():
             file=sys.stderr,
         )
         sys.exit(1)
+    finally:
+        print("trainer_main.py: Script execution completed.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,9 @@ def ensure_model_loaded(training_service: TrainingService) -> Inferencer | None:
     """
     if "inference_service" not in st.session_state:
         model_config = training_service.get_model_config()
-        st.session_state.inferencer = Inferencer(ModelConfig(**model_config))
+        st.session_state.inferencer = Inferencer(
+            ModelConfig(**model_config), training_service.work_dir
+        )
 
     service = st.session_state.inferencer
 

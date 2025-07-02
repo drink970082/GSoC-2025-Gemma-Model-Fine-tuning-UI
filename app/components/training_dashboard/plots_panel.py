@@ -35,11 +35,12 @@ def display_plots_panel(training_service: TrainingService):
     # Create performance plots
     if perf_metrics:
         st.markdown("### Performance Metrics")
+        perf_cols = st.columns(3)
 
         # Steps per second
         if "perf_stats/steps_per_sec" in perf_metrics:
-            st.markdown("**Training Speed (Steps/Second)**")
-            st.line_chart(
+            perf_cols[0].markdown("**Training Speed (Steps/Second)**")
+            perf_cols[0].line_chart(
                 perf_metrics["perf_stats/steps_per_sec"],
                 x="step",
                 y="value",
@@ -48,8 +49,8 @@ def display_plots_panel(training_service: TrainingService):
 
         # Training time
         if "perf_stats/total_training_time_hours" in perf_metrics:
-            st.markdown("**Total Training Time (Hours)**")
-            st.line_chart(
+            perf_cols[1].markdown("**Total Training Time (Hours)**")
+            perf_cols[1].line_chart(
                 perf_metrics["perf_stats/total_training_time_hours"],
                 x="step",
                 y="value",
@@ -58,8 +59,8 @@ def display_plots_panel(training_service: TrainingService):
 
         # Data throughput
         if "perf_stats/data_points_per_sec_global" in perf_metrics:
-            st.markdown("**Data Throughput (Points/Second)**")
-            st.line_chart(
+            perf_cols[2].markdown("**Data Throughput (Points/Second)**")
+            perf_cols[2].line_chart(
                 perf_metrics["perf_stats/data_points_per_sec_global"],
                 x="step",
                 y="value",

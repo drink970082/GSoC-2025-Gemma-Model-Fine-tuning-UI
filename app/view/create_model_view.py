@@ -1,5 +1,5 @@
 import streamlit as st
-
+import time
 from app.components.create_model.config_summary import (
     show_configuration_preview,
 )
@@ -41,10 +41,14 @@ def show_create_model_view(training_service: TrainingService):
     st.divider()
     st.subheader("6. Start Training")
     if show_start_training_section(config):
-        training_service.start_training(config)
-        st.session_state.session_started_by_app = True
-        with st.spinner("Waiting for training process to initialize..."):
-            training_service.wait_for_lock_file()
+        with st.spinner(
+            "Waiting for training process to initialize...",
+            show_time=True,
+        ):
+            training_service.start_training(config)
+            st.session_state.session_started_by_app = True
+            while not training_service.wait_for_lock_file():
+                time.sleep(1)
 
         st.session_state.view = "training_dashboard"
         st.rerun()

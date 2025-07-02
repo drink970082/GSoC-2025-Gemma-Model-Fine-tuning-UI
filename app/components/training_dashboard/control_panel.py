@@ -71,7 +71,6 @@ def display_control_panel(training_service: TrainingService):
     status = training_service.get_training_status()
     if is_training_active:
 
-        st.info(f"Training in progress... Status: {status}")
         _create_shutdown_button("Abort Training", training_service)
     else:
         latest_checkpoint = _find_latest_checkpoint()

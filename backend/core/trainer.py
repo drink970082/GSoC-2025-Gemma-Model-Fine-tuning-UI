@@ -38,7 +38,14 @@ class ModelTrainer:
         os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "1.00"
 
     def create_trainer(self, model: Any, train_ds: Any) -> kd.train.Trainer:
-        return kd.train.Trainer(
+        checkpointer = kd.ckpts.Checkpointer(
+            save_interval_steps=100,
+            save_on_steps=[
+                self.model_config.epochs
+            ],  # Explicitly save at final step
+            max_to_keep=3,
+        )
+        trainer = kd.train.Trainer(
             seed=42,
             workdir=self.workdir,
             train_ds=train_ds,
@@ -51,28 +58,27 @@ class ModelTrainer:
             ),
             log_metrics_every=1,
             log_summaries_every=1000,
+            checkpointer=checkpointer,
         )
+        return trainer
 
     def train(self) -> Tuple[Any, Any]:
         """Execute the training process."""
+        self.status_manager.set_work_dir(self.workdir)
         state, aux = None, None
         try:
             self.status_manager.update("Initializing training...")
             self.setup_environment()
-            self.pipeline = create_pipeline(self.data_config.__dict__)
-            train_ds = self.pipeline.get_train_dataset()
-            self.model = ModelFactory.create_model(self.model_config)
-            self.trainer = self.create_trainer(self.model, train_ds)
-
-            self.status_manager.update("Starting training...")
-            state, aux = self.trainer.train()
-            self.status_manager.update("Saving model...")
-            ckpt = ocp.StandardCheckpointer()
-            ckpt.save(
-                os.path.abspath(f"{self.workdir}/final_checkpoint"),
-                state.params,
-            )
-            ckpt.wait_until_finished()
+            # Create pipeline and dataset
+            pipeline = create_pipeline(self.data_config.__dict__)
+            train_ds = pipeline.get_train_dataset()
+            # Create model
+            model = ModelFactory.create_model(self.model_config)
+            # Create trainer and checkpointer
+            trainer = self.create_trainer(model, train_ds)
+            self.status_manager.update("Training in progress...")
+            state, aux = trainer.train()
+            self.status_manager.update("Training completed.")
             return state, aux
 
         except Exception:

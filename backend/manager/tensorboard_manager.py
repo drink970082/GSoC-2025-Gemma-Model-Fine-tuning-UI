@@ -22,7 +22,7 @@ class TensorBoardManager(BaseManager):
         self._manager_tracking_time = time.time()
         self._event_data = {}
         self.ignore_timing = True
-        self.tensorboard_log_dir = config.TENSORBOARD_LOGDIR
+        self.tensorboard_log_dir = None
 
     def cleanup(self):
         """Cleanup method called by atexit."""

@@ -3,9 +3,11 @@ import signal
 import subprocess
 import time
 from typing import Literal, Optional
+
 import streamlit as st
+
 from backend.manager.base_manager import BaseManager
-from config.app_config import get_config, TrainingStatus
+from config.app_config import TrainingStatus, get_config
 
 config = get_config()
 
@@ -129,7 +131,7 @@ class ProcessManager(BaseManager):
 
     def _is_process_running(self, pid: int) -> bool:
         """Check if a process with the given PID is running."""
-        if pid <= 0:
+        if pid is None or pid <= 0:
             return False
         try:
             os.kill(pid, 0)
@@ -230,27 +232,27 @@ class ProcessManager(BaseManager):
         Investigates the lock file and OS to give a definitive status.
         This is the single source of truth for the system's state.
         """
-        if not self.is_lock_file_locked():
-            # If the lock file is gone, we are definitively idle.
-            if self.training_process is not None:
-                self.reset_state()
-            return TrainingStatus.IDLE
+        if self.training_process:
+            if self.training_process.poll() is None:
+                # Process is still running
+                return TrainingStatus.RUNNING
+            else:
+                # Process has finished, reap the zombie and return FINISHED
+                self.training_process.wait()
+                return TrainingStatus.FINISHED
 
-        # If we reach here, a lock file exists. Now we investigate.
-        pid = self._read_lock_file()
+        # If we don't have the process object (e.g., after a restart),
+        # fall back to checking the lock file.
+        if self.is_lock_file_locked():
+            pid = self._read_lock_file()
+            if pid and self._is_process_running(pid):
+                return TrainingStatus.ORPHANED
+            else:
+                # Lock file exists but process is gone. It's a stale run.
+                return TrainingStatus.FINISHED
 
-        if not (pid and self._is_process_running(pid)):
-            # The lock file exists, but the process is dead (stale lock).
-            return TrainingStatus.FINISHED
-
-        # If we get here, a process is definitely running with the locked PID.
-        if self.training_process and self.training_process.pid == pid:
-            # It's the process we are actively managing.
-            return TrainingStatus.RUNNING
-        else:
-            # It's a live process, but not one we launched in this session.
-            # This is the definitive ORPHANED state.
-            return TrainingStatus.ORPHANED
+        # No process object, no lock file. We are idle.
+        return TrainingStatus.IDLE
 
     def reset_state(self) -> None:
         """

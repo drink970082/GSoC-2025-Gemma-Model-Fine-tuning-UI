@@ -79,7 +79,6 @@ class TrainingService:
         This is the single source of truth for the application's training state.
         """
         status = self.process_manager.get_status()
-
         if status == TrainingStatus.RUNNING:
             return True
 
@@ -94,7 +93,6 @@ class TrainingService:
             return False
 
         if status == TrainingStatus.FINISHED:
-            st.info("Training process has completed. Cleaning up...")
             self.process_manager.reset_state()
             return False
 
@@ -120,7 +118,9 @@ class TrainingService:
 
         return {
             # Metadata
-            **self.tensorboard_manager.get_parsed_metadata(),
+            **self.tensorboard_manager.get_parsed_metadata().get(
+                "parameters", {}
+            ),
             # Progress KPIs
             "current_step": self.tensorboard_manager.get_current_step(),
             "total_steps": total_steps,
