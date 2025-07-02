@@ -1,29 +1,41 @@
+from backend.manager.base_manager import BaseManager
 import os
-
 from config.app_config import get_config
 
 config = get_config()
 
 
-class StatusManager:
+class StatusManager(BaseManager):
     """Manages the training status updates and file handling."""
 
-    def __init__(self, status_file: str = config.STATUS_LOG):
-        self.status_file = status_file
+    def __init__(self):
+        super().__init__()
+        self.status_file_path = config.STATUS_LOG
+
+    def cleanup(self):
+        """Removes the status log file."""
+        pass
 
     def update(self, message: str) -> None:
         """Update the status message in the status file."""
-        with open(self.status_file, "w") as f:
-            f.write(message)
+        try:
+            with open(self.status_file_path, "w") as f:
+                f.write(message)
+        except OSError as e:
+            print(f"Error writing to status file: {e}")
 
     def get(self) -> str:
-        """Get the current training status from the status file."""
-        if os.path.exists(self.status_file):
-            with open(self.status_file, "r") as f:
+        """Reads the current status from the status file."""
+        try:
+            with open(self.status_file_path, "r") as f:
                 return f.read().strip()
-        return "Initializing"
+        except FileNotFoundError:
+            return "Initializing"
 
-    def cleanup(self) -> None:
-        """Clean up the status file if it exists."""
-        if os.path.exists(self.status_file):
-            os.remove(self.status_file)
+    def set_work_dir(self, work_dir: str) -> None:
+        """Set the work directory and derive file paths."""
+        super().set_work_dir(work_dir)
+        if work_dir:
+            self.status_file_path = os.path.join(work_dir, config.STATUS_LOG)
+        else:
+            self.status_file_path = None

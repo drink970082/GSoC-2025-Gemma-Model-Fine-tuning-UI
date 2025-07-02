@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from enum import Enum, auto
 
 
 @dataclass
@@ -24,6 +25,13 @@ class DataConfig:
     seq2seq_in_response: str
     seq2seq_max_length: int
     seq2seq_truncate: bool
+
+
+class TrainingStatus(Enum):
+    IDLE = auto()
+    RUNNING = auto()
+    FINISHED = auto()
+    ORPHANED = auto()
 
 
 class AppConfig:
@@ -58,7 +66,7 @@ class AppConfig:
     LOCK_FILE = ".training.lock"
     STATUS_LOG = "status.log"
     CHECKPOINT_FOLDER = os.path.abspath("./checkpoints/")
-    TENSORBOARD_LOGDIR = "/tmp/ckpts"
+    TENSORBOARD_LOGDIR = "checkpoints/"
     TENSORBOARD_PORT = 6007
     TRAINER_STDOUT_LOG = "trainer_stdout.log"
     TRAINER_STDERR_LOG = "trainer_stderr.log"

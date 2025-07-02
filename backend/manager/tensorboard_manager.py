@@ -1,6 +1,6 @@
 import json
-import os
 import time
+import os
 
 import numpy as np
 import pandas as pd
@@ -8,42 +8,31 @@ from tensorboard.backend.event_processing.event_accumulator import (
     EventAccumulator,
 )
 
+from backend.manager.base_manager import BaseManager
 from config.app_config import get_config
 
 config = get_config()
 
-class TensorBoardDataManager:
+
+class TensorBoardManager(BaseManager):
     """Manages TensorBoard event data loading and caching."""
 
-    def __init__(
-        self, log_dir: str = config.TENSORBOARD_LOGDIR, ignore_timing: bool = False
-    ):
-        self.log_dir = log_dir
-        self._event_data = {}
+    def __init__(self):
+        super().__init__()
         self._manager_tracking_time = time.time()
-        self.ignore_timing = (
-            ignore_timing  # Allow reading all files regardless of timing
-        )
+        self._event_data = {}
+        self.ignore_timing = True
+        self.tensorboard_log_dir = None
+
+    def cleanup(self):
+        """Cleanup method called by atexit."""
+        self._manager_tracking_time = 0
+        self._event_data = {}
 
     def reset_training_time(self):
         """Reset the training start time to current time."""
         self._manager_tracking_time = time.time()
-        self.clear_cache()
-
-    def list_all_event_files(self) -> list[tuple[str, float, float]]:
-        """List all event files with their creation and modification times."""
-        event_files = []
-        for root, _, files in os.walk(self.log_dir):
-            for file in files:
-                if file.startswith("events.out.tfevents."):
-                    file_path = os.path.join(root, file)
-                    created_time = os.path.getctime(file_path)
-                    modified_time = os.path.getmtime(file_path)
-                    event_files.append((file_path, created_time, modified_time))
-
-        # Sort by modification time (newest first)
-        event_files.sort(key=lambda x: x[2], reverse=True)
-        return event_files
+        self._event_data = {}
 
     def examine_event_file(self, file_path: str) -> dict:
         """Examine a specific event file and return its contents."""
@@ -87,24 +76,38 @@ class TensorBoardDataManager:
         except Exception as e:
             return {"file_path": file_path, "error": str(e)}
 
-    def _find_latest_event_file(self) -> str:
-        """Find the latest event file in the log directory."""
-        event_files = self.list_all_event_files()
+    def _find_latest_event_file(self, since_time: float = 0) -> str | None:
+        since_time = 0 if self.ignore_timing else self._manager_tracking_time
+        """Finds the latest event file in the log directory."""
+        event_files = []
+        for root, _, files in os.walk(self.tensorboard_log_dir):
+            for file in files:
+                if "events.out.tfevents" in file:
+                    file_path = os.path.join(root, file)
+                    event_files.append(
+                        (
+                            file_path,
+                            os.path.getctime(file_path),
+                            os.path.getmtime(file_path),
+                        )
+                    )
 
         if not event_files:
             return None
 
-        if self.ignore_timing:
-            # Return the most recently modified file
+        # Sort by modification time (newest first)
+        event_files.sort(key=lambda x: x[2], reverse=True)
+
+        if not since_time:
             return event_files[0][0]
-        else:
-            # Only consider files created after manager initialization
-            relevant_files = [
-                file_path
-                for file_path, created_time, _ in event_files
-                if created_time >= self._manager_tracking_time
-            ]
-            return relevant_files[0] if relevant_files else None
+
+        # Only consider files created after the specified time
+        relevant_files = [
+            file_path
+            for file_path, created_time, _ in event_files
+            if created_time >= since_time
+        ]
+        return relevant_files[0] if relevant_files else None
 
     def _load_event_data(self) -> dict[str, pd.DataFrame]:
         """Load and parse event data from TensorBoard logs."""
@@ -234,7 +237,7 @@ class TensorBoardDataManager:
         else:
             return f"Shape: {list(tensor_proto.tensor_shape.dim)}, Dtype: {tensor_proto.dtype}"
 
-    def parse_parameter_summary(self, param_text: str) -> dict:
+    def _parse_parameter_summary(self, param_text: str) -> dict:
         """Parse parameter summary text and extract key information."""
         if not param_text or not isinstance(param_text, str):
             return {}
@@ -288,7 +291,7 @@ class TensorBoardDataManager:
 
         return result
 
-    def parse_element_spec(self, spec_text: str) -> dict:
+    def _parse_element_spec(self, spec_text: str) -> dict:
         """Parse element spec JSON format."""
         if not spec_text or not isinstance(spec_text, str):
             return {}
@@ -327,7 +330,7 @@ class TensorBoardDataManager:
 
         return {}
 
-    def parse_context_spec(self, spec_text: str) -> dict:
+    def _parse_context_spec(self, spec_text: str) -> dict:
         """Parse context spec table format."""
         if not spec_text or not isinstance(spec_text, str):
             return {}
@@ -365,57 +368,32 @@ class TensorBoardDataManager:
 
         return result
 
-    def get_parsed_metadata(self) -> dict:
-        """Get parsed metadata with all the parsed information."""
-        metadata = self.get_metadata()
-        parsed_data = {}
-
-        if "parameters" in metadata and metadata["parameters"]:
-            parsed_data["parameters"] = self.parse_parameter_summary(
-                str(metadata["parameters"])
-            )
-
-        if "element_spec" in metadata and metadata["element_spec"]:
-            parsed_data["element_spec"] = self.parse_element_spec(
-                str(metadata["element_spec"])
-            )
-
-        if "context_spec" in metadata and metadata["context_spec"]:
-            parsed_data["context_spec"] = self.parse_context_spec(
-                str(metadata["context_spec"])
-            )
-
-        # Add raw metadata
-        parsed_data["raw"] = metadata
-
-        return parsed_data
-
-    def get_data(self) -> dict[str, pd.DataFrame]:
+    def _get_data(self) -> dict[str, pd.DataFrame]:
         """Get current event data (always loads fresh data)."""
         self._event_data = self._load_event_data()
         return self._event_data
 
-    def get_metadata(self) -> dict[str, any]:
+    def _get_metadata(self) -> dict[str, any]:
         """Get metadata tensors only."""
-        data = self.get_data()
+        data = self._get_data()
         return {
             k: v.iloc[0]["value"] if not v.empty else None
             for k, v in data.items()
             if k in ["num_params", "parameters", "element_spec", "context_spec"]
         }
 
-    def get_training_metrics(self) -> dict[str, pd.DataFrame]:
+    def _get_training_metrics(self) -> dict[str, pd.DataFrame]:
         """Get training metrics only."""
-        data = self.get_data()
+        data = self._get_data()
         return {
             k: v
             for k, v in data.items()
             if k.startswith(("losses/", "perf_stats/"))
         }
 
-    def get_latest_values(self) -> dict[str, any]:
+    def _get_latest_values(self) -> dict[str, any]:
         """Get latest values for all training metrics."""
-        training_data = self.get_training_metrics()
+        training_data = self._get_training_metrics()
         latest_values = {}
 
         for metric_name, metric_df in training_data.items():
@@ -424,19 +402,44 @@ class TensorBoardDataManager:
 
         return latest_values
 
+    def get_parsed_metadata(self) -> dict:
+        """Get parsed metadata with all the parsed information."""
+        metadata = self._get_metadata()
+        parsed_data = {}
+
+        if "parameters" in metadata and metadata["parameters"]:
+            parsed_data["parameters"] = self._parse_parameter_summary(
+                str(metadata["parameters"])
+            )
+
+        if "element_spec" in metadata and metadata["element_spec"]:
+            parsed_data["element_spec"] = self._parse_element_spec(
+                str(metadata["element_spec"])
+            )
+
+        if "context_spec" in metadata and metadata["context_spec"]:
+            parsed_data["context_spec"] = self._parse_context_spec(
+                str(metadata["context_spec"])
+            )
+
+        # Add raw metadata
+        parsed_data["raw"] = metadata
+
+        return parsed_data
+
     def get_loss_metrics(self) -> dict[str, pd.DataFrame]:
         """Get loss metrics only."""
-        data = self.get_data()
+        data = self._get_data()
         return {k: v for k, v in data.items() if k.startswith("losses/")}
 
     def get_performance_metrics(self) -> dict[str, pd.DataFrame]:
         """Get performance metrics only."""
-        data = self.get_data()
+        data = self._get_data()
         return {k: v for k, v in data.items() if k.startswith("perf_stats/")}
 
     def get_current_step(self) -> int:
         """Get current training step."""
-        training_data = self.get_training_metrics()
+        training_data = self._get_training_metrics()
         if (
             "losses/loss" in training_data
             and not training_data["losses/loss"].empty
@@ -446,36 +449,50 @@ class TensorBoardDataManager:
 
     def get_current_loss(self) -> float:
         """Get current loss value."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("losses/loss", 0.0)
 
     def get_training_speed(self) -> float:
         """Get current training speed (steps/sec)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/steps_per_sec", 0.0)
 
     def get_training_time(self) -> float:
         """Get total training time (hours)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/total_training_time_hours", 0.0)
 
     def get_data_throughput(self) -> float:
         """Get data throughput (points/sec)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/data_points_per_sec_global", 0.0)
 
     def get_avg_step_time(self) -> float:
         """Get average step time (seconds)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get("perf_stats/train/avg_time_sec", 0.0)
 
     def get_avg_eval_time(self) -> float:
         """Get average evaluation time (seconds)."""
-        latest_values = self.get_latest_values()
+        latest_values = self._get_latest_values()
         return latest_values.get(
             "perf_stats/evals_along_train/avg_time_sec", 0.0
         )
 
-    def clear_cache(self):
-        """Clear cached data."""
-        self._event_data = {}
+    def get_eta_str(self, total_steps: int) -> str:
+        """Get the estimated time remaining as a formatted string."""
+        training_speed = self.get_training_speed()
+        latest_step = self.get_current_step()
+
+        if training_speed > 0 and total_steps > 0:
+            remaining_steps = total_steps - latest_step
+            if remaining_steps > 0:
+                eta_seconds = remaining_steps / training_speed
+                return time.strftime("%H:%M:%S", time.gmtime(eta_seconds))
+
+        return "N/A"
+
+    def set_work_dir(self, work_dir: str) -> None:
+        """Set the work directory for TensorBoard logs."""
+        super().set_work_dir(work_dir)
+        self.tensorboard_log_dir = work_dir

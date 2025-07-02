@@ -1,20 +1,16 @@
 import pandas as pd
 import streamlit as st
 
-from backend.manager.global_manager import get_tensorboard_manager
+from services.training_service import TrainingService
 
 
 @st.fragment(run_every=1)
-def display_plots_panel():
+def display_plots_panel(training_service: TrainingService):
     """Display the core performance plots panel."""
     st.subheader("Core Performance Plots")
 
-    # Get TensorBoard manager
-    manager = get_tensorboard_manager()
-
-    # Get data from manager
-    loss_metrics = manager.get_loss_metrics()
-    perf_metrics = manager.get_performance_metrics()
+    loss_metrics = training_service.get_loss_metrics()
+    perf_metrics = training_service.get_performance_metrics()
 
     if not loss_metrics and not perf_metrics:
         st.info("Waiting for first metric to be logged...")
@@ -39,11 +35,12 @@ def display_plots_panel():
     # Create performance plots
     if perf_metrics:
         st.markdown("### Performance Metrics")
+        perf_cols = st.columns(3)
 
         # Steps per second
         if "perf_stats/steps_per_sec" in perf_metrics:
-            st.markdown("**Training Speed (Steps/Second)**")
-            st.line_chart(
+            perf_cols[0].markdown("**Training Speed (Steps/Second)**")
+            perf_cols[0].line_chart(
                 perf_metrics["perf_stats/steps_per_sec"],
                 x="step",
                 y="value",
@@ -52,8 +49,8 @@ def display_plots_panel():
 
         # Training time
         if "perf_stats/total_training_time_hours" in perf_metrics:
-            st.markdown("**Total Training Time (Hours)**")
-            st.line_chart(
+            perf_cols[1].markdown("**Total Training Time (Hours)**")
+            perf_cols[1].line_chart(
                 perf_metrics["perf_stats/total_training_time_hours"],
                 x="step",
                 y="value",
@@ -62,8 +59,8 @@ def display_plots_panel():
 
         # Data throughput
         if "perf_stats/data_points_per_sec_global" in perf_metrics:
-            st.markdown("**Data Throughput (Points/Second)**")
-            st.line_chart(
+            perf_cols[2].markdown("**Data Throughput (Points/Second)**")
+            perf_cols[2].line_chart(
                 perf_metrics["perf_stats/data_points_per_sec_global"],
                 x="step",
                 y="value",
