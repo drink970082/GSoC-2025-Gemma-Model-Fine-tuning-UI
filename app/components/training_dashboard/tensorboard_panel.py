@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-def display_tensorboard_iframe(port: int = 6007) -> None:
+def display_tensorboard_panel(port: int = 6007) -> None:
     """Display TensorBoard directly in the Streamlit app using an iframe."""
     st.markdown(
         f"""

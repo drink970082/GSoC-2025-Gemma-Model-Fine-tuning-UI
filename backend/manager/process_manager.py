@@ -11,6 +11,7 @@ from config.app_config import get_config
 
 config = get_config()
 
+
 class ProcessManager:
     """A class to manage background subprocesses and cleanup operations."""
 
@@ -20,9 +21,21 @@ class ProcessManager:
         self.data_config = None
         self.model_config = None
 
+    def get_training_model_config(self) -> dict | None:
+        """Retrieves the model config for the current training run."""
+        return self.model_config
+
+    def get_training_data_config(self) -> dict | None:
+        """Retrieves the data config for the current training run."""
+        return self.data_config
+
     def update_config(self, data_config, model_config):
         self.data_config = data_config
         self.model_config = model_config
+
+    def clear_config(self):
+        self.data_config = None
+        self.model_config = None
 
     def start_training(self):
         """
