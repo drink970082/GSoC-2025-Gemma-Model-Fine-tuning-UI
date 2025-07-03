@@ -2,7 +2,7 @@ from typing import Any
 from gemma import gm
 
 
-class SamplerFactory:
+class Sampler:
     """Factory for creating samplers."""
 
     @staticmethod

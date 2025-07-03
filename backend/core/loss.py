@@ -1,7 +1,7 @@
 from kauldron import kd
 
 
-class LossFactory:
+class Loss:
     """Factory for creating loss functions."""
 
     @staticmethod
