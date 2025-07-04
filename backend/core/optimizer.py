@@ -4,7 +4,7 @@ from kauldron import kd
 
 
 class Optimizer:
-    """Factory for creating optimizers."""
+    """Class for creating optimizers."""
 
     @staticmethod
     def create_standard_optimizer(learning_rate: float) -> Any:

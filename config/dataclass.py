@@ -22,7 +22,6 @@ class MethodConfig:
 class DataConfig:
     source: str
     dataset_name: str
-    config: Optional[str] = None
     split: str
     shuffle: bool
     batch_size: int
@@ -30,6 +29,7 @@ class DataConfig:
     seq2seq_in_response: str
     seq2seq_max_length: int
     seq2seq_truncate: bool
+    config: Optional[str] = None
 
 
 @dataclass

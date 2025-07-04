@@ -2,11 +2,9 @@ from typing import Any
 
 from gemma import gm
 
-from config.dataclass import ModelConfig
-
 
 class Model:
-    """Factory for creating model instances."""
+    """Class for creating model instances."""
 
     @staticmethod
     def create_standard_model(model_variant: str) -> Any:
@@ -17,11 +15,8 @@ class Model:
     @staticmethod
     def create_lora_model(model_variant: str, lora_rank: int) -> Any:
         """Create the model instance."""
-        model_class = getattr(gm.nn, model_variant)
-        return gm.nn.LoRA(
-            rank=lora_rank,
-            model=model_class(tokens="batch.input", text_only=True),
-        )
+        base_model = Model.create_standard_model(model_variant)
+        return gm.nn.LoRA(rank=lora_rank, model=base_model)
 
     @staticmethod
     def create_standard_checkpoint(model_variant: str) -> Any:

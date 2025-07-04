@@ -4,8 +4,9 @@ from typing import Optional
 
 from gemma import gm
 
-from backend.core.model import ModelFactory
-from config.app_config import get_config, ModelConfig
+from backend.core.model import Model
+from config.app_config import get_config
+from config.dataclass import TrainingConfig
 
 config = get_config()
 
@@ -13,8 +14,8 @@ config = get_config()
 class Inferencer:
     """Service for running inference with trained models."""
 
-    def __init__(self, model_config: ModelConfig, work_dir: str):
-        self.model_config: ModelConfig = model_config
+    def __init__(self, training_config: TrainingConfig, work_dir: str):
+        self.training_config: TrainingConfig = training_config
         self.model = None
         self.params = None
         self.tokenizer = None
@@ -40,10 +41,17 @@ class Inferencer:
             return False
 
         # Load trained parameters from the latest checkpoint
-        self.params = ModelFactory.load_trained_params(latest_checkpoint_path)
+        self.params = Model.load_trained_params(latest_checkpoint_path)
 
-        # Create model instance
-        self.model = ModelFactory.create_model(self.model_config)
+        if self.training_config.method_config.name == "LoRA":
+            self.model = Model.create_lora_model(
+                self.training_config.model_config.model_variant,
+                self.training_config.method_config.parameters.lora_rank,
+            )
+        else:
+            self.model = Model.create_standard_model(
+                self.training_config.model_config.model_variant
+            )
 
         # Create tokenizer
         self.tokenizer = gm.text.Gemma3Tokenizer()

@@ -3,7 +3,7 @@ from gemma import gm
 
 
 class Sampler:
-    """Factory for creating samplers."""
+    """Class for creating samplers."""
 
     @staticmethod
     def create_sampler(

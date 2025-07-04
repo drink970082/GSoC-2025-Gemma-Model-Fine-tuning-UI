@@ -47,11 +47,6 @@ def initialize_session_state():
     if "training_started" not in st.session_state:
         st.session_state.training_started = False
 
-    # Model and data configurations
-    if "model_config" not in st.session_state:
-        st.session_state.model_config = {}
-    if "data_config" not in st.session_state:
-        st.session_state.data_config = {}
 
 
 # --- Main Application ---

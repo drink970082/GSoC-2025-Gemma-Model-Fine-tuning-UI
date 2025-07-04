@@ -37,7 +37,7 @@ class ModelTrainer:
         try:
             self.status_manager.update("Initializing training...")
             self.setup_environment()
-            pipeline = create_pipeline(self.data_config.__dict__)
+            pipeline = create_pipeline(self.training_config.data_config)
             train_ds = pipeline.get_train_dataset()
             trainer = FINE_TUNE_STRATEGIES[
                 self.training_config.method_config.name

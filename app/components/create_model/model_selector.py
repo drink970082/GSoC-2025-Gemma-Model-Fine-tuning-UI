@@ -44,7 +44,7 @@ def show_model_selection_section() -> ModelConfig:
 
     # Training parameters
     st.subheader("Training Parameters")
-    col1, col2, col3 = st.columns(2)
+    col1, col2 = st.columns(2)
     with col1:
         epochs = st.number_input(
             "Number of Epochs",

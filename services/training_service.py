@@ -31,7 +31,7 @@ class TrainingService:
         self.tensorboard_manager = tensorboard_manager
         self.status_manager = status_manager
         self.system_manager = system_manager
-        self.app_config = None
+        self.training_config = None
         self.work_dir = None
 
     def start_training(self, training_config: TrainingConfig) -> None:
@@ -41,7 +41,7 @@ class TrainingService:
         if self.is_training_running():
             st.warning("Training is already in progress.")
             return
-
+        self.training_config = training_config
         self.process_manager.update_config(training_config)
         self._set_work_dir(training_config.model_name)
         self.tensorboard_manager.reset_training_time()
@@ -102,9 +102,9 @@ class TrainingService:
         """Gets the latest status message from the training process."""
         return self.status_manager.get()
 
-    def get_model_config(self) -> Optional[Dict[str, Any]]:
-        """Retrieve the model configuration for the current training run."""
-        return self.process_manager.get_training_model_config()
+    def get_training_config(self) -> Optional[TrainingConfig]:
+        """Retrieve the training configuration for the current training run."""
+        return self.training_config
 
     def get_kpi_data(self) -> dict:
         """
@@ -112,9 +112,7 @@ class TrainingService:
         """
         # Ensure the latest data is loaded from the event file
         self.tensorboard_manager._get_data()
-
-        model_config = self.get_model_config() or {}
-        total_steps = model_config.get("epochs", 0)
+        total_steps = self.training_config.model_config.epochs
 
         return {
             # Metadata
