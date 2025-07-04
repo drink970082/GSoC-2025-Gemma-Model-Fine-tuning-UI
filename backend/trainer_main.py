@@ -6,7 +6,6 @@ from config.dataclass import (
     TrainingConfig,
     ModelConfig,
     DataConfig,
-    MethodConfig,
     LoraParams,
     DpoParams,
 )
@@ -15,21 +14,24 @@ from config.dataclass import (
 def parse_config(config: dict) -> TrainingConfig:
     # Handle the parameters field
     parameters = None
-    method_config_dict = config["method_config"]
-    if method_config_dict.get("parameters"):
-        if method_config_dict["name"] == "LoRA":
-            parameters = LoraParams(**method_config_dict["parameters"])
-        elif method_config_dict["name"] == "DPO":
-            parameters = DpoParams(**method_config_dict["parameters"])
-    method_config = MethodConfig(
-        name=method_config_dict["name"], parameters=parameters
+    model_config_dict = config["model_config"]
+    if model_config_dict.get("parameters"):
+        if model_config_dict["method"] == "LoRA":
+            parameters = LoraParams(**model_config_dict["parameters"])
+        elif model_config_dict["method"] == "DPO":
+            parameters = DpoParams(**model_config_dict["parameters"])
+    model_config = ModelConfig(
+        model_variant=model_config_dict["model_variant"],
+        epochs=model_config_dict["epochs"],
+        learning_rate=model_config_dict["learning_rate"],
+        method=model_config_dict["method"],
+        parameters=parameters,
     )
     # Standard method has parameters=None, which is already set
     return TrainingConfig(
         model_name=config["model_name"],
-        model_config=ModelConfig(**config["model_config"]),
+        model_config=ModelConfig(model_config),
         data_config=DataConfig(**config["data_config"]),
-        method_config=method_config,
     )
 
 

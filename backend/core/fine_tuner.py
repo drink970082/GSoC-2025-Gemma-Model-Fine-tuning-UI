@@ -4,6 +4,7 @@ from kauldron import kd
 from backend.core.loss import Loss
 from backend.core.model import Model
 from backend.core.optimizer import Optimizer
+from backend.core.checkpoint import Checkpoint
 
 from config.dataclass import TrainingConfig
 
@@ -18,10 +19,6 @@ class Trainer:
         workdir,
         num_train_steps,
     ) -> kd.train.Trainer:
-        checkpointer = kd.ckpts.Checkpointer(
-            save_interval_steps=100,
-            save_on_steps=[num_train_steps],  # Explicitly save at final step
-        )
         trainer = kd.train.Trainer(
             seed=42,
             workdir=workdir,
@@ -33,7 +30,12 @@ class Trainer:
             optimizer=optimizer,
             log_metrics_every=1,
             log_summaries_every=1000,
-            checkpointer=checkpointer,
+            checkpointer=kd.ckpts.Checkpointer(
+                save_interval_steps=100,
+                save_on_steps=[
+                    num_train_steps
+                ],  # Explicitly save at final step
+            ),
         )
         return trainer
 
@@ -45,7 +47,7 @@ class StandardTrainer(Trainer):
         model = Model.create_standard_model(
             training_config.model_config.model_variant
         )
-        init_transform = Model.create_standard_checkpoint(
+        init_transform = Checkpoint.create_standard_checkpoint(
             training_config.model_config
         )
         optimizer = Optimizer.create_standard_optimizer(
@@ -67,11 +69,11 @@ class LoRATrainer(Trainer):
     ) -> kd.train.Trainer:
         model = Model.create_lora_model(
             training_config.model_config.model_variant,
-            training_config.method_config.parameters.lora_rank,
+            training_config.model_config.parameters.lora_rank,
         )
-        init_transform = Model.create_lora_checkpoint(
+        init_transform = Checkpoint.create_lora_checkpoint(
             training_config.model_config.model_variant,
-            training_config.method_config.parameters.lora_rank,
+            training_config.model_config.parameters.lora_rank,
         )
         optimizer = Optimizer.create_lora_optimizer(
             training_config.model_config.learning_rate

@@ -11,14 +11,8 @@ def show_inference_view(training_service):
     """
     st.header("Inference Playground")
     st.write("Test your newly trained model!")
-
-    # Step 1: Ensure the model is loaded and get the service instance.
-    service = ensure_model_loaded(training_service)
-
-    # Step 2: If the model is loaded, show the interactive playground.
-    if service:
-        st.divider()
-        show_inference_playground(service)
+    st.divider()
+    show_inference_playground()
 
 
 if __name__ == "__main__":

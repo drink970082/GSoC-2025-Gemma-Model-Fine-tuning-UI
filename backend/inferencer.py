@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
+import shutil
 from typing import Optional
-
 from gemma import gm
-
 from backend.core.model import Model
 from config.app_config import get_config
 from config.dataclass import TrainingConfig
@@ -22,31 +21,47 @@ class Inferencer:
         self._loaded = False
         self.work_dir = work_dir
 
-    def _find_latest_checkpoint(self) -> Optional[str]:
-        """Find the most recently created checkpoint directory."""
+    def list_checkpoints(self) -> list[str]:
+        """Return a list of checkpoint directory names, sorted by creation time (newest first)."""
         if not os.path.exists(self.work_dir):
-            return None
-        subdirs = [p for p in Path(self.work_dir).iterdir()]
-        if not subdirs:
-            return None
+            return []
+        subdirs = [p for p in Path(self.work_dir).iterdir() if p.is_dir()]
+        subdirs.sort(key=lambda p: p.stat().st_ctime, reverse=True)
+        return [p.name for p in subdirs]
 
-        # Return the path of the most recently created directory
-        latest_subdir = max(subdirs, key=lambda p: p.stat().st_ctime)
-        return str(latest_subdir)
+    def get_latest_checkpoint(self) -> str:
+        """Return the path of the most recently created checkpoint directory."""
+        checkpoints = self.list_checkpoints()
+        if not checkpoints:
+            return None
+        return checkpoints[0]
 
-    def load_model(self) -> bool:
+    def delete_checkpoint(self, checkpoint_name):
+        """Delete the specified checkpoint directory."""
+        checkpoint_path = Path(self.work_dir) / checkpoint_name
+        if checkpoint_path.exists() and checkpoint_path.is_dir():
+            shutil.rmtree(checkpoint_path)
+            return True
+        return False
+
+    def load_model(self, checkpoint_path: Optional[str] = None) -> bool:
         """Load the most recent trained model if available."""
-        latest_checkpoint_path = self._find_latest_checkpoint()
-        if not latest_checkpoint_path:
-            return False
+        self._loaded = False
+        if checkpoint_path is None:
+            checkpoint_path = self.get_latest_checkpoint()
+            if not checkpoint_path:
+                return False
+        else:
+            if not os.path.exists(checkpoint_path):
+                return False
 
         # Load trained parameters from the latest checkpoint
-        self.params = Model.load_trained_params(latest_checkpoint_path)
+        self.params = Model.load_trained_params(checkpoint_path)
 
-        if self.training_config.method_config.name == "LoRA":
+        if self.training_config.model_config.method == "LoRA":
             self.model = Model.create_lora_model(
                 self.training_config.model_config.model_variant,
-                self.training_config.method_config.parameters.lora_rank,
+                self.training_config.model_config.parameters.lora_rank,
             )
         else:
             self.model = Model.create_standard_model(

@@ -9,7 +9,7 @@ import streamlit as st
 
 from backend.manager.base_manager import BaseManager
 from config.app_config import TrainingStatus, get_config
-from config.dataclass import TrainingConfig
+from config.dataclass import TrainingConfig, ModelConfig
 
 config = get_config()
 
@@ -72,7 +72,6 @@ class ProcessManager(BaseManager):
             not self.training_config
             or not self.training_config.data_config
             or not self.training_config.model_config
-            or not self.training_config.method_config
         ):
             st.error("Data or model configuration is not set.")
             return
@@ -92,6 +91,7 @@ class ProcessManager(BaseManager):
                 command, stdout=f_out, stderr=f_err
             )
             self._write_lock_file(self.training_process.pid)
+            self._write_model_config(self.training_config.model_config)
         except Exception as e:
             st.error(f"Failed to start the training subprocess: {e}")
             return
@@ -214,6 +214,11 @@ class ProcessManager(BaseManager):
         if self._log_stderr_handle and not self._log_stderr_handle.closed:
             self._log_stderr_handle.close()
             self._log_stderr_handle = None
+
+    def _write_model_config(self, model_config: ModelConfig) -> None:
+        """Writes the model config to the model_config.json file."""
+        with open(f"{self.work_dir}/model_config.json", "w") as f:
+            json.dump(asdict(model_config), f)
 
     def read_stdout_log(self) -> str:
         """Reads the content of the standard output log file."""
