@@ -1,7 +1,7 @@
 import streamlit as st
 
 from backend.inferencer import Inferencer
-from config.app_config import ModelConfig
+from config.dataclass import TrainingConfig
 from services.training_service import TrainingService
 
 
@@ -12,9 +12,9 @@ def ensure_model_loaded(training_service: TrainingService) -> Inferencer | None:
     Returns the service instance if loaded, otherwise None.
     """
     if "inference_service" not in st.session_state:
-        model_config = training_service.get_model_config()
+        training_config = training_service.get_training_config()
         st.session_state.inferencer = Inferencer(
-            ModelConfig(**model_config), training_service.work_dir
+            training_config, training_service.work_dir
         )
 
     service = st.session_state.inferencer

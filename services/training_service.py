@@ -9,6 +9,7 @@ from backend.manager.status_manager import StatusManager
 from backend.manager.system_manager import SystemManager
 from config.app_config import TrainingStatus
 from config.app_config import get_config
+from config.dataclass import TrainingConfig
 
 config = get_config()
 
@@ -30,20 +31,19 @@ class TrainingService:
         self.tensorboard_manager = tensorboard_manager
         self.status_manager = status_manager
         self.system_manager = system_manager
+        self.training_config = None
         self.work_dir = None
 
-    def start_training(self, app_config: Dict[str, Any]) -> None:
+    def start_training(self, training_config: TrainingConfig) -> None:
         """
         Starts the training process, using the lock file to prevent duplicates.
         """
         if self.is_training_running():
             st.warning("Training is already in progress.")
             return
-
-        self.process_manager.update_config(
-            app_config["data_config"], app_config["model_config"]
-        )
-        self._set_work_dir(app_config["model_config"])
+        self.training_config = training_config
+        self.process_manager.update_config(training_config)
+        self._set_work_dir(training_config.model_name)
         self.tensorboard_manager.reset_training_time()
         self.process_manager.start_training()
 
@@ -102,9 +102,9 @@ class TrainingService:
         """Gets the latest status message from the training process."""
         return self.status_manager.get()
 
-    def get_model_config(self) -> Optional[Dict[str, Any]]:
-        """Retrieve the model configuration for the current training run."""
-        return self.process_manager.get_training_model_config()
+    def get_training_config(self) -> Optional[TrainingConfig]:
+        """Retrieve the training configuration for the current training run."""
+        return self.training_config
 
     def get_kpi_data(self) -> dict:
         """
@@ -112,9 +112,7 @@ class TrainingService:
         """
         # Ensure the latest data is loaded from the event file
         self.tensorboard_manager._get_data()
-
-        model_config = self.get_model_config() or {}
-        total_steps = model_config.get("epochs", 0)
+        total_steps = self.training_config.model_config.epochs
 
         return {
             # Metadata
@@ -164,11 +162,9 @@ class TrainingService:
         stderr = self.process_manager.read_stderr_log()
         return stdout, stderr
 
-    def _set_work_dir(self, model_config: Dict[str, Any]) -> None:
+    def _set_work_dir(self, model_name: str) -> None:
         """Updates the work directory with the model configuration."""
-        self.work_dir = (
-            f"{model_config['model_variant']}-{time.strftime('%Y%m%d_%H%M%S')}"
-        )
+        self.work_dir = f"{model_name}-{time.strftime('%Y%m%d_%H%M%S')}"
         self.work_dir = os.path.join(config.CHECKPOINT_FOLDER, self.work_dir)
         self.process_manager.set_work_dir(self.work_dir)
         self.tensorboard_manager.set_work_dir(self.work_dir)

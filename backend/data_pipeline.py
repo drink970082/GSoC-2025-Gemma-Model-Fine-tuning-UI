@@ -1,7 +1,8 @@
 import os
 import atexit
 from itertools import islice
-from typing import Dict, List
+from typing import List, Dict
+from config.dataclass import DataConfig
 
 import pandas as pd
 from gemma import gm
@@ -11,7 +12,7 @@ from kauldron import kd
 class DataPipeline:
     """Base class for data pipelines."""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: DataConfig):
         """Initialize the data pipeline with configuration."""
         self.config = config
         # The tokenizer is now instantiated directly here.
@@ -19,7 +20,7 @@ class DataPipeline:
 
     def _get_preview_split(self, num_records: int = 5) -> str:
         """Helper function to construct the preview split."""
-        base_split = self.config.get("split") or "train"
+        base_split = self.config.split or "train"
         split_type = base_split.split("[")[0]
         preview_split = f"{split_type}[:{num_records}]"
         return preview_split
@@ -28,14 +29,14 @@ class DataPipeline:
         """Helper function to construct the list of transforms."""
         return [
             gm.data.Seq2SeqTask(
-                in_prompt=self.config["seq2seq_in_prompt"],
-                in_response=self.config["seq2seq_in_response"],
+                in_prompt=self.config.seq2seq_in_prompt,
+                in_response=self.config.seq2seq_in_response,
+                max_length=self.config.seq2seq_max_length,
+                truncate=self.config.seq2seq_truncate,
                 out_input="input",
                 out_target="target",
                 out_target_mask="loss_mask",
                 tokenizer=self.tokenizer,
-                max_length=self.config["seq2seq_max_length"],
-                truncate=self.config.get("seq2seq_truncate", True),
             ),
         ]
 
@@ -55,9 +56,9 @@ class DataPipeline:
 class JSONPipeline(DataPipeline):
     """Pipeline for JSON format data with preview capabilities."""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: DataConfig):
         super().__init__(config)
-        self.temp_file_path = self.config.get("data_path")
+        self.temp_file_path = self.config.dataset_name
         if self.temp_file_path:
             atexit.register(self.cleanup)
 
@@ -65,7 +66,7 @@ class JSONPipeline(DataPipeline):
         """Efficiently reads the first N records from a JSONL file."""
         try:
             df = pd.read_json(
-                self.config["data_path"],
+                self.temp_file_path,
                 lines=True,
                 nrows=num_records,
             )
@@ -77,7 +78,7 @@ class JSONPipeline(DataPipeline):
         """Loads and processes the first N records from a JSONL file."""
         try:
             ds = kd.data.py.Json(
-                path=self.config["data_path"],
+                path=self.temp_file_path,
                 shuffle=False,
                 transforms=self._get_transforms(),
             )
@@ -89,9 +90,9 @@ class JSONPipeline(DataPipeline):
         """Loads the full dataset from the JSONL file for training."""
         try:
             return kd.data.py.Json(
-                path=self.config["data_path"],
-                shuffle=self.config.get("shuffle", True),
-                batch_size=self.config.get("batch_size", 4),
+                path=self.temp_file_path,
+                shuffle=self.config.shuffle,
+                batch_size=self.config.batch_size,
                 transforms=self._get_transforms(),
             )
         except Exception as e:
@@ -110,10 +111,10 @@ class TensorFlowPipeline(DataPipeline):
         """Loads the first N records of the raw dataset WITHOUT transforms."""
         try:
             ds = kd.data.py.Tfds(
-                name=self.config["dataset_name"],
+                name=self.config.dataset_name,
                 split=self._get_preview_split(),
                 shuffle=False,
-                batch_size=self.config.get("batch_size", 8),
+                batch_size=self.config.batch_size,
             )
             return ds[0]
         except Exception as e:
@@ -123,10 +124,10 @@ class TensorFlowPipeline(DataPipeline):
         """Loads and processes the first N records WITH transforms."""
         try:
             ds = kd.data.py.Tfds(
-                name=self.config["dataset_name"],
+                name=self.config.dataset_name,
                 split=self._get_preview_split(),
                 shuffle=False,
-                batch_size=self.config.get("batch_size", 8),
+                batch_size=self.config.batch_size,
                 transforms=self._get_transforms(),
             )
             return ds[0]
@@ -137,10 +138,10 @@ class TensorFlowPipeline(DataPipeline):
         """Loads the full dataset for actual training."""
         try:
             return kd.data.py.Tfds(
-                name=self.config["dataset_name"],
-                split=self.config.get("split") or "train",
-                shuffle=self.config.get("shuffle", True),
-                batch_size=self.config.get("batch_size", 8),
+                name=self.config.dataset_name,
+                split=self.config.split,
+                shuffle=self.config.shuffle,
+                batch_size=self.config.batch_size,
                 transforms=self._get_transforms(),
             )
         except Exception as e:
@@ -154,10 +155,11 @@ class HuggingFacePipeline(DataPipeline):
         """Streams the first N records of the raw dataset WITHOUT transforms."""
         try:
             ds = kd.data.py.HuggingFace(
-                path=self.config["dataset_name"],
+                path=self.config.dataset_name,
+                config=self.config.config,
                 split=self._get_preview_split(),
                 shuffle=False,
-                batch_size=self.config.get("batch_size", 8),
+                batch_size=self.config.batch_size,
             )
             return ds[0]
         except Exception as e:
@@ -169,11 +171,12 @@ class HuggingFacePipeline(DataPipeline):
         """Streams and processes the first N records WITH transforms."""
         try:
             ds = kd.data.py.HuggingFace(
-                path=self.config["dataset_name"],
+                path=self.config.dataset_name,
+                config=self.config.config,
                 split=self._get_preview_split(),
                 streaming=True,
                 shuffle=False,
-                batch_size=self.config.get("batch_size", 8),
+                batch_size=self.config.batch_size,
                 transforms=self._get_transforms(),
             )
             return ds[0]
@@ -186,20 +189,21 @@ class HuggingFacePipeline(DataPipeline):
         """Loads the full dataset from HuggingFace for training."""
         try:
             return kd.data.py.HuggingFace(
-                path=self.config["dataset_name"],
-                split=self.config.get("split") or "train",
-                shuffle=self.config.get("shuffle", True),
-                batch_size=self.config.get("batch_size", 8),
+                path=self.config.dataset_name,
+                config=self.config.config,
+                split=self.config.split,
+                shuffle=self.config.shuffle,
+                batch_size=self.config.batch_size,
                 transforms=self._get_transforms(),
             )
         except Exception as e:
             raise ValueError(f"Failed to load HuggingFace dataset: {str(e)}")
 
 
-def create_pipeline(config: Dict) -> DataPipeline:
+def create_pipeline(config: DataConfig) -> DataPipeline:
     """Create a data pipeline based on the configuration."""
     os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "1.00"
-    data_source = config.get("source", "").lower()
+    data_source = config.source.lower()
     # The tokenizer is no longer passed as an argument here.
     if data_source == "huggingface":
         return HuggingFacePipeline(config)

@@ -3,11 +3,13 @@ import signal
 import subprocess
 import time
 from typing import Literal, Optional
-
+from dataclasses import asdict
+import json
 import streamlit as st
 
 from backend.manager.base_manager import BaseManager
 from config.app_config import TrainingStatus, get_config
+from config.dataclass import TrainingConfig
 
 config = get_config()
 
@@ -18,8 +20,7 @@ class ProcessManager(BaseManager):
     def __init__(self):
         super().__init__()
         self.training_process: Optional[subprocess.Popen] = None
-        self.data_config = None
-        self.model_config = None
+        self.training_config: Optional[TrainingConfig] = None
         # Paths for managed files
         self.lock_file_path = config.LOCK_FILE
         self.stdout_log_path = None
@@ -34,15 +35,18 @@ class ProcessManager(BaseManager):
 
     def get_training_model_config(self) -> dict | None:
         """Retrieves the model config for the current training run."""
-        return self.model_config
+        return (
+            self.training_config.model_config if self.training_config else None
+        )
 
     def get_training_data_config(self) -> dict | None:
         """Retrieves the data config for the current training run."""
-        return self.data_config
+        return (
+            self.training_config.data_config if self.training_config else None
+        )
 
-    def update_config(self, data_config, model_config):
-        self.data_config = data_config
-        self.model_config = model_config
+    def update_config(self, training_config):
+        self.training_config = training_config
 
     def start_training(self):
         """
@@ -64,20 +68,20 @@ class ProcessManager(BaseManager):
                 )
                 self._remove_lock_file()
 
-        if not self.data_config or not self.model_config:
+        if (
+            not self.training_config
+            or not self.training_config.data_config
+            or not self.training_config.model_config
+            or not self.training_config.method_config
+        ):
             st.error("Data or model configuration is not set.")
             return
-
-        data_config_str = str(self.data_config)
-        model_config_str = str(self.model_config)
 
         command = [
             "python",
             config.TRAINER_MAIN_PATH,
-            "--data_config",
-            data_config_str,
-            "--model_config",
-            model_config_str,
+            "--config",
+            json.dumps(asdict(self.training_config)),
             "--work_dir",
             self.work_dir,
         ]
@@ -262,8 +266,7 @@ class ProcessManager(BaseManager):
         self._close_log_files()
         self._remove_lock_file()
         self.training_process = None
-        self.data_config = None
-        self.model_config = None
+        self.app_config = None
         self.work_dir = None
 
     def set_work_dir(self, work_dir: str) -> None:
