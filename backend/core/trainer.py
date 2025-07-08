@@ -40,7 +40,7 @@ class ModelTrainer:
             pipeline = create_pipeline(self.training_config.data_config)
             train_ds = pipeline.get_train_dataset()
             trainer = FINE_TUNE_STRATEGIES[
-                self.training_config.method_config.name
+                self.training_config.model_config.method
             ].create_trainer(self.training_config, train_ds, self.workdir)
             self.status_manager.update("Training in progress...")
             state, aux = trainer.train()

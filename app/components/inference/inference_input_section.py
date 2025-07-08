@@ -22,11 +22,24 @@ def show_inference_input_section():
                     )
                     return
                 response = st.session_state.sampler.chat(prompt)
+                if "sampler" not in st.session_state:
+                    st.error(
+                        "No sampler found. Please load a checkpoint first."
+                    )
+                    return
+                response = st.session_state.sampler.chat(prompt)
 
                 st.subheader("Response")
                 st.write(response)
 
                 # Show token info if the tokenizer is available
+                if st.session_state.tokenizer:
+                    input_tokens = len(
+                        st.session_state.tokenizer.encode(prompt)
+                    )
+                    output_tokens = len(
+                        st.session_state.tokenizer.encode(response)
+                    )
                 if st.session_state.tokenizer:
                     input_tokens = len(
                         st.session_state.tokenizer.encode(prompt)

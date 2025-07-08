@@ -1,7 +1,8 @@
 import streamlit as st
 
 from config.model_info import MODEL_INFO
-from config.dataclass import ModelConfig
+from config.fine_tuning_info import FINE_TUNING_METHODS
+from config.dataclass import ModelConfig, LoraParams, DpoParams
 
 
 def show_model_selection_section() -> ModelConfig:
@@ -35,8 +36,52 @@ def show_model_selection_section() -> ModelConfig:
             for req, value in model["requirements"].items():
                 st.markdown(f"- {req}: {value}")
 
-    # Training parameters
-    st.markdown("#### Training Parameters")
+    method = st.radio(
+        "Select Fine-tuning Method",
+        list(FINE_TUNING_METHODS.keys()),
+        help="Choose the fine-tuning approach based on your needs",
+        horizontal=True,
+    )
+
+    # Show method description
+    st.info(FINE_TUNING_METHODS[method]["description"])
+    params: DpoParams | LoraParams | None = None
+    # Show advantages and disadvantages
+    with st.expander("Method Details"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Advantages:**")
+            for adv in FINE_TUNING_METHODS[method]["advantages"]:
+                st.markdown(f"- {adv}")
+        with col2:
+            st.markdown("**Disadvantages:**")
+            for dis in FINE_TUNING_METHODS[method]["disadvantages"]:
+                st.markdown(f"- {dis}")
+
+    if method == "LoRA":
+        st.markdown("#### LoRA Parameters")
+        lora_params = FINE_TUNING_METHODS["LoRA"]["parameters"]
+        lora_rank = st.number_input(
+            "LoRA Rank",
+            1,
+            32,
+            lora_params["lora_rank"]["default"],
+            help=lora_params["lora_rank"]["description"],
+        )
+        params = LoraParams(lora_rank=lora_rank)
+    elif method == "DPO":
+        st.markdown("#### DPO Parameters")
+        dpo_params = FINE_TUNING_METHODS["DPO"]["parameters"]
+        dpo_beta = st.number_input(
+            "DPO Beta",
+            0.1,
+            1.0,
+            dpo_params["dpo_beta"]["default"],
+            help=dpo_params["dpo_beta"]["description"],
+        )
+        params = DpoParams(dpo_beta=dpo_beta)
+
+    st.subheader("Training Parameters")
     col1, col2 = st.columns(2)
     with col1:
         epochs = st.number_input(
@@ -60,4 +105,6 @@ def show_model_selection_section() -> ModelConfig:
         model_variant=model_variant,
         epochs=epochs,
         learning_rate=learning_rate,
+        method=method,
+        parameters=params,
     )
