@@ -2,6 +2,7 @@ import json
 import tempfile
 
 import pandas as pd
+import numpy
 import streamlit as st
 import streamlit.components.v1 as components
 import treescope
@@ -150,21 +151,7 @@ def show_data_source_section() -> DataConfig:
             st.markdown("#### Human-Readable Source Data")
             try:
                 with st.spinner("Loading raw preview..."):
-                    raw_examples = pipeline.get_raw_preview(num_records=5)
-                    src_texts = [
-                        text.decode("utf-8")
-                        for text in raw_examples[data_config.seq2seq_in_prompt]
-                    ]
-                    dst_texts = [
-                        text.decode("utf-8")
-                        for text in raw_examples[
-                            data_config.seq2seq_in_response
-                        ]
-                    ]
-
-                    df = pd.DataFrame(
-                        {"Prompt": src_texts, "Response": dst_texts}
-                    )
+                    df = pipeline.get_raw_preview(num_records=5)
                     st.dataframe(
                         df,
                         use_container_width=True,

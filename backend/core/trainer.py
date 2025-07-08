@@ -35,16 +35,16 @@ class ModelTrainer:
         self.status_manager.set_work_dir(self.workdir)
         state, aux = None, None
         try:
-            self.status_manager.update("Initializing training...")
+            self.status_manager.update("Initializing training")
             self.setup_environment()
             pipeline = create_pipeline(self.training_config.data_config)
             train_ds = pipeline.get_train_dataset()
             trainer = FINE_TUNE_STRATEGIES[
                 self.training_config.model_config.method
             ].create_trainer(self.training_config, train_ds, self.workdir)
-            self.status_manager.update("Training in progress...")
+            self.status_manager.update("Training in progress")
             state, aux = trainer.train()
-            self.status_manager.update("Training completed.")
+            self.status_manager.update("Training completed")
             return state, aux
 
         except Exception:

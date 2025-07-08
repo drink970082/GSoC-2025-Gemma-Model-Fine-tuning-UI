@@ -1,10 +1,11 @@
 import os
 import atexit
 from itertools import islice
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from config.dataclass import DataConfig
 
 import pandas as pd
+import numpy as np
 from gemma import gm
 from kauldron import kd
 
@@ -51,6 +52,31 @@ class DataPipeline:
     def get_train_dataset(self) -> kd.data.Pipeline:
         """Loads the full dataset for actual training."""
         raise NotImplementedError
+
+    def _to_py_str(self, val):
+        if isinstance(val, bytes):
+            return val.decode("utf-8")
+        if isinstance(val, (np.bytes_,)):
+            return val.decode("utf-8")
+        if isinstance(val, (str, np.str_)):
+            return str(val)
+        return val
+
+    def get_prompt_and_response_df(
+        self, data: Dict, prompt_key: str, response_key: str
+    ) -> Tuple[List[str], List[str]]:
+        if prompt_key not in data:
+            raise ValueError(
+                f"Source field name {prompt_key} not found in the dataset, possible options are: {list(data.keys())}"
+            )
+        if response_key not in data:
+            raise ValueError(
+                f"Target field name {response_key} not found in the dataset, possible options are: {list(data.keys())}"
+            )
+        src_texts = [self._to_py_str(ex) for ex in data[prompt_key]]
+        dst_texts = [self._to_py_str(ex) for ex in data[response_key]]
+        df = pd.DataFrame({"Prompt": src_texts, "Response": dst_texts})
+        return df
 
 
 class JSONPipeline(DataPipeline):
@@ -107,7 +133,7 @@ class JSONPipeline(DataPipeline):
 class TensorFlowPipeline(DataPipeline):
     """Pipeline for TensorFlow datasets with preview capabilities."""
 
-    def get_raw_preview(self, num_records: int = 5) -> List[Dict]:
+    def get_raw_preview(self, num_records: int = 5) -> pd.DataFrame:
         """Loads the first N records of the raw dataset WITHOUT transforms."""
         try:
             ds = kd.data.py.Tfds(
@@ -116,7 +142,11 @@ class TensorFlowPipeline(DataPipeline):
                 shuffle=False,
                 batch_size=self.config.batch_size,
             )
-            return ds[0]
+            return self.get_prompt_and_response_df(
+                ds[0],
+                self.config.seq2seq_in_prompt,
+                self.config.seq2seq_in_response,
+            )
         except Exception as e:
             raise ValueError(f"Failed to load raw TFDS preview: {str(e)}")
 
@@ -151,7 +181,7 @@ class TensorFlowPipeline(DataPipeline):
 class HuggingFacePipeline(DataPipeline):
     """Pipeline for HuggingFace datasets with preview capabilities."""
 
-    def get_raw_preview(self, num_records: int = 5) -> List[Dict]:
+    def get_raw_preview(self, num_records: int = 5) -> pd.DataFrame:
         """Streams the first N records of the raw dataset WITHOUT transforms."""
         try:
             ds = kd.data.py.HuggingFace(
@@ -161,7 +191,11 @@ class HuggingFacePipeline(DataPipeline):
                 shuffle=False,
                 batch_size=self.config.batch_size,
             )
-            return ds[0]
+            return self.get_prompt_and_response_df(
+                ds[0],
+                self.config.seq2seq_in_prompt,
+                self.config.seq2seq_in_response,
+            )
         except Exception as e:
             raise ValueError(
                 f"Failed to load raw HuggingFace preview: {str(e)}"
@@ -174,7 +208,6 @@ class HuggingFacePipeline(DataPipeline):
                 path=self.config.dataset_name,
                 config=self.config.config,
                 split=self._get_preview_split(),
-                streaming=True,
                 shuffle=False,
                 batch_size=self.config.batch_size,
                 transforms=self._get_transforms(),

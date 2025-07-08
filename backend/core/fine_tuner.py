@@ -31,9 +31,7 @@ class Trainer:
             log_metrics_every=1,
             log_summaries_every=1000,
             checkpointer=kd.ckpts.Checkpointer(
-                save_on_steps=[
-                    num_train_steps + 1
-                ],  # Explicitly save at final step
+                save_interval_steps=num_train_steps
             ),
         )
         return trainer

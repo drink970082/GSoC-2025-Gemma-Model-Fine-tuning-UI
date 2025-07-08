@@ -18,6 +18,8 @@ class StatusManager(BaseManager):
 
     def update(self, message: str) -> None:
         """Update the status message in the status file."""
+        if not self.status_file_path:
+            return
         try:
             with open(self.status_file_path, "w") as f:
                 f.write(message)
@@ -26,11 +28,13 @@ class StatusManager(BaseManager):
 
     def get(self) -> str:
         """Reads the current status from the status file."""
+        if not self.status_file_path:
+            return "Idle"
         try:
             with open(self.status_file_path, "r") as f:
                 return f.read().strip()
         except FileNotFoundError:
-            return "Initializing"
+            return "Idle"
 
     def set_work_dir(self, work_dir: str | None) -> None:
         """Set the work directory and derive file paths."""

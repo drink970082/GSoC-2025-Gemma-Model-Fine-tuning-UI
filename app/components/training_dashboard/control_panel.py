@@ -1,7 +1,7 @@
 import time
 import streamlit as st
 from services.training_service import TrainingService
-from config.app_config import get_config
+from config.app_config import get_config, TrainingStatus
 from pathlib import Path
 
 config = get_config()
@@ -21,12 +21,12 @@ def _create_shutdown_button(label: str, training_service: TrainingService):
 
         if shutdown_ok:
             st.success(
-                "All processes have been shut down. Redirecting to welcome page..."
+                "All processes have been shut down."
             )
             st.session_state.session_started_by_app = False
-            st.session_state.view = "welcome"
-            time.sleep(2)
-            st.rerun()
+            if st.button("Go to Welcome Page", use_container_width=True):
+                st.session_state.view = "welcome"
+                st.rerun()
         else:
             st.error(
                 "Failed to stop training processes. Please check the logs."
@@ -67,14 +67,16 @@ def display_control_panel(training_service: TrainingService):
     Displays the main status and control panel at the top of the dashboard.
     This panel changes based on the training state (active, failed, completed).
     """
-    is_training_active = training_service.is_training_running()
-    status = training_service.get_training_status()
-    if is_training_active:
+    training_status = training_service.is_training_running()
+    log_status = training_service.get_training_status()
+    print(training_status)
+
+    if training_status == TrainingStatus.RUNNING:
         _create_shutdown_button("Abort Training", training_service)
     else:
         latest_checkpoint = _find_latest_checkpoint()
-        if "Error" in status:
-            st.error(f"Training Failed: {status}")
+        if training_status == TrainingStatus.FAILED:
+            st.error(f"Training Failed: {log_status}")
             _create_shutdown_button("Reset Application", training_service)
         elif latest_checkpoint is None:
             st.warning(

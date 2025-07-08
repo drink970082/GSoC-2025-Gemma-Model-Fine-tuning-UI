@@ -16,13 +16,10 @@ def show_inference_input_section():
 
         with st.spinner("Generating response..."):
             try:
-                if "sampler" not in st.session_state:
-                    st.error(
-                        "No sampler found. Please load a checkpoint first."
-                    )
-                    return
-                response = st.session_state.sampler.chat(prompt)
-                if "sampler" not in st.session_state:
+                if (
+                    "sampler" not in st.session_state
+                    or st.session_state.sampler is None
+                ):
                     st.error(
                         "No sampler found. Please load a checkpoint first."
                     )

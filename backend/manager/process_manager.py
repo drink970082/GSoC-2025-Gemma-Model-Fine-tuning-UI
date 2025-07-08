@@ -257,8 +257,11 @@ class ProcessManager(BaseManager):
                 return TrainingStatus.RUNNING
             else:
                 # Process has finished, reap the zombie and return FINISHED
-                self.training_process.wait()
-                return TrainingStatus.FINISHED
+                exit_code = self.training_process.wait()
+                if exit_code == 0:
+                    return TrainingStatus.FINISHED
+                else:
+                    return TrainingStatus.FAILED
 
         # If we don't have the process object (e.g., after a restart),
         # fall back to checking the lock file.
@@ -273,13 +276,15 @@ class ProcessManager(BaseManager):
         # No process object, no lock file. We are idle.
         return TrainingStatus.IDLE
 
-    def reset_state(self) -> None:
+    def reset_state(self, delete_checkpoint: bool = False) -> None:
         """
         Performs a full cleanup of files and resets the manager's
         internal state to idle.
         """
         self._close_log_files()
         self._remove_lock_file()
+        if delete_checkpoint:
+            self.remove_work_dir()
         self.training_process = None
         self.app_config = None
         self.work_dir = None

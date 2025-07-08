@@ -9,7 +9,7 @@ from app.components.training_dashboard.system_usage_panel import (
     display_system_usage_panel,
 )
 from services.training_service import TrainingService
-from config.app_config import get_config
+from config.app_config import get_config, TrainingStatus
 
 config = get_config()
 
@@ -21,9 +21,9 @@ def poll_training_status(training_service: TrainingService):
     If so, it triggers a rerun to update the control panel to its terminal state.
     """
     if (
-        not training_service.is_training_running()
-        and st.session_state.session_started_by_app
-    ):
+        training_service.is_training_running() == TrainingStatus.FINISHED
+        or training_service.is_training_running() == TrainingStatus.FAILED
+    ) and st.session_state.session_started_by_app:
         st.session_state.session_started_by_app = False
         st.rerun()
     status = training_service.get_training_status()
@@ -35,10 +35,6 @@ def poll_training_status(training_service: TrainingService):
 def show_training_dashboard_view(training_service: TrainingService):
     """Display the training interface."""
     st.title("LLM Fine-Tuning Dashboard")
-    st.code(
-        body="Expected a long training time with model initialization. Please wait for the training to start.",
-        language="None",
-    )
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
     poll_training_status(training_service)

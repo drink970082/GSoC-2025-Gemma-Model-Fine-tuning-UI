@@ -30,7 +30,7 @@ def parse_config(config: dict) -> TrainingConfig:
     # Standard method has parameters=None, which is already set
     return TrainingConfig(
         model_name=config["model_name"],
-        model_config=ModelConfig(model_config),
+        model_config=model_config,
         data_config=DataConfig(**config["data_config"]),
     )
 

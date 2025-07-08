@@ -1,5 +1,6 @@
 import streamlit as st
 from services.training_service import TrainingService
+from config.app_config import TrainingStatus
 
 
 def display_welcome_modal(training_service: TrainingService):
@@ -12,7 +13,7 @@ def display_welcome_modal(training_service: TrainingService):
                 unsafe_allow_html=True,
             )
 
-            if training_service.is_training_running():
+            if training_service.is_training_running() == TrainingStatus.RUNNING:
                 st.markdown(
                     "<p style='text-align: center;'>An active fine-tuning process is running.</p>",
                     unsafe_allow_html=True,

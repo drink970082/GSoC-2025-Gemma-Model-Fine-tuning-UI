@@ -38,7 +38,7 @@ class TrainingService:
         """
         Starts the training process, using the lock file to prevent duplicates.
         """
-        if self.is_training_running():
+        if self.is_training_running() == TrainingStatus.RUNNING:
             st.warning("Training is already in progress.")
             return
         self.training_config = training_config
@@ -63,6 +63,7 @@ class TrainingService:
         Stops the training process and always cleans up the lock file.
         """
         try:
+            self.status_manager.update("Stopping training")
             processes_stopped = self.process_manager.terminate_process(
                 mode=mode, delete_checkpoint=True
             )
@@ -73,14 +74,12 @@ class TrainingService:
             st.error(f"Failed to stop training: {e}")
             return False
 
-    def is_training_running(self) -> bool:
+    def is_training_running(self) -> TrainingStatus:
         """
         Checks if a training run is active by only checking for the lock file.
         This is the single source of truth for the application's training state.
         """
         status = self.process_manager.get_status()
-        if status == TrainingStatus.RUNNING:
-            return True
 
         if status == TrainingStatus.ORPHANED:
             st.warning(
@@ -90,13 +89,14 @@ class TrainingService:
             self.process_manager.force_cleanup()
             st.success("Cleanup complete. The application is now ready.")
             time.sleep(2)
-            return False
 
         if status == TrainingStatus.FINISHED:
             self.process_manager.reset_state()
-            return False
 
-        return False
+        if status == TrainingStatus.FAILED:
+            self.process_manager.reset_state(delete_checkpoint=True)
+
+        return status
 
     def get_training_status(self) -> str:
         """Gets the latest status message from the training process."""

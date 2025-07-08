@@ -7,6 +7,7 @@ class TrainingStatus(Enum):
     IDLE = auto()
     RUNNING = auto()
     FINISHED = auto()
+    FAILED = auto()
     ORPHANED = auto()
 
 

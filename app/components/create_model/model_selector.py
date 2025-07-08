@@ -81,7 +81,7 @@ def show_model_selection_section() -> ModelConfig:
         )
         params = DpoParams(dpo_beta=dpo_beta)
 
-    st.subheader("Training Parameters")
+    st.markdown("#### Training Parameters")
     col1, col2 = st.columns(2)
     with col1:
         epochs = st.number_input(
