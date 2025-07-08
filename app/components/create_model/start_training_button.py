@@ -5,7 +5,7 @@ from config.dataclass import TrainingConfig
 
 def show_start_training_section(config: TrainingConfig):
     """Display the start training section and handle validation."""
-    if st.button("Start Fine-tuning", type="primary"):
+    if st.button("Start Fine-tuning", type="primary", key="start_training_button"):
         if not config.model_name:
             st.error("Please enter a model name")
         elif not config.data_config.dataset_name:
@@ -19,5 +19,5 @@ def show_start_training_section(config: TrainingConfig):
             else:
                 st.error("Please provide dataset name")
         else:
-            return True
-    return False
+                return True
+        return False

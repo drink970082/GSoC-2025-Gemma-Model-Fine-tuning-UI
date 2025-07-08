@@ -1,0 +1,3 @@
+xla_cpu_enable_fast_min_max: false
+xla_gpu_cuda_data_dir: "/home/halcyon/anaconda3/envs/gemma/lib/python3.11/site-packages/nvidia/cuda_nvcc"
+xla_dump_to: "./xla"

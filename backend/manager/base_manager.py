@@ -22,8 +22,11 @@ class BaseManager(ABC):
             "manager": self.__class__.__name__,
         }
 
-    def set_work_dir(self, work_dir: str) -> None:
+    def set_work_dir(self, work_dir: str | None) -> None:
         """set the work directory."""
         # We must create the work_dir if it doesn't exist
-        os.makedirs(work_dir, exist_ok=True)
-        self.work_dir = work_dir
+        if work_dir:
+            os.makedirs(work_dir, exist_ok=True)
+            self.work_dir = work_dir
+        else:
+            self.work_dir = None

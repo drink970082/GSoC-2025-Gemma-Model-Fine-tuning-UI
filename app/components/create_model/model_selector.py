@@ -1,9 +1,7 @@
 import streamlit as st
 
-from config.app_config import get_config
+from config.model_info import MODEL_INFO
 from config.dataclass import ModelConfig
-
-config = get_config()
 
 
 def show_model_selection_section() -> ModelConfig:
@@ -11,13 +9,13 @@ def show_model_selection_section() -> ModelConfig:
 
     model_variant = st.selectbox(
         "Select Gemma Model",
-        list(config.MODEL_INFO.keys()),
-        index=0,
+        list(MODEL_INFO.keys()),
+        index=3,
         help="Choose the model size based on your task and available resources",
     )
 
     # Model information
-    model = config.MODEL_INFO[model_variant]
+    model = MODEL_INFO[model_variant]
     st.info(
         f"""
         - Size: {model['size']}
@@ -37,13 +35,8 @@ def show_model_selection_section() -> ModelConfig:
             for req, value in model["requirements"].items():
                 st.markdown(f"- {req}: {value}")
 
-    # task_type = st.selectbox(
-    #     "Select Task Type",
-    #     list(TASK_TYPES.keys()),
-    # )
-
     # Training parameters
-    st.subheader("Training Parameters")
+    st.markdown("#### Training Parameters")
     col1, col2 = st.columns(2)
     with col1:
         epochs = st.number_input(

@@ -8,3 +8,4 @@ jax[cuda12]
 gemma
 datasets
 tensorflow[and-cuda]
+python-dotenv

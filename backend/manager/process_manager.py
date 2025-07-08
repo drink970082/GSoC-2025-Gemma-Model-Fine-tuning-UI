@@ -6,10 +6,10 @@ from typing import Literal, Optional
 from dataclasses import asdict
 import json
 import streamlit as st
-
+import shutil
 from backend.manager.base_manager import BaseManager
 from config.app_config import TrainingStatus, get_config
-from config.dataclass import TrainingConfig
+from config.dataclass import TrainingConfig, ModelConfig
 
 config = get_config()
 
@@ -31,7 +31,7 @@ class ProcessManager(BaseManager):
 
     def cleanup(self):
         """Cleanup method called by atexit."""
-        self.terminate_process(mode="graceful")
+        self.terminate_process(mode="graceful", delete_checkpoint=False)
 
     def get_training_model_config(self) -> dict | None:
         """Retrieves the model config for the current training run."""
@@ -47,6 +47,11 @@ class ProcessManager(BaseManager):
 
     def update_config(self, training_config):
         self.training_config = training_config
+
+    def write_model_config(self, model_config: ModelConfig):
+        """Writes the model config to the model_config.json file."""
+        with open(f"{self.work_dir}/model_config.json", "w") as f:
+            json.dump(asdict(model_config), f)
 
     def start_training(self):
         """
@@ -91,6 +96,7 @@ class ProcessManager(BaseManager):
             self.training_process = subprocess.Popen(
                 command, stdout=f_out, stderr=f_err
             )
+            self.write_model_config(self.training_config.model_config)
             self._write_lock_file(self.training_process.pid)
         except Exception as e:
             st.error(f"Failed to start the training subprocess: {e}")
@@ -106,14 +112,14 @@ class ProcessManager(BaseManager):
                 st.error(
                     "The training process failed to start with no error message."
                 )
-
-            # Clean up lock file and close logs if process dies immediately
+            shutil.rmtree(self.work_dir)
             self.reset_state()
             return
 
     def terminate_process(
         self,
         mode: Literal["graceful", "force"] = "graceful",
+        delete_checkpoint: bool = False,
     ) -> bool:
         """Terminate a process either gracefully or forcefully."""
         terminated = True
@@ -123,13 +129,17 @@ class ProcessManager(BaseManager):
                 try:
                     self.training_process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
-                    return self.terminate_process(mode="force")
+                    return self.terminate_process(
+                        mode="force", delete_checkpoint=delete_checkpoint
+                    )
             else:
                 try:
                     self.training_process.kill()
                     self.training_process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     terminated = False
+        if delete_checkpoint:
+            self.remove_work_dir()
         self.reset_state()
         return terminated
 
@@ -269,7 +279,7 @@ class ProcessManager(BaseManager):
         self.app_config = None
         self.work_dir = None
 
-    def set_work_dir(self, work_dir: str) -> None:
+    def set_work_dir(self, work_dir: str | None) -> None:
         """Set the work directory and derive file paths."""
         super().set_work_dir(work_dir)
         if work_dir:
@@ -282,3 +292,9 @@ class ProcessManager(BaseManager):
         else:
             self.stdout_log_path = None
             self.stderr_log_path = None
+
+    def remove_work_dir(self) -> None:
+        """Removes the work directory."""
+        if self.work_dir:
+            shutil.rmtree(self.work_dir)
+            self.work_dir = None

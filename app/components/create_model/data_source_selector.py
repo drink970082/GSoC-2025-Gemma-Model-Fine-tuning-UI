@@ -147,7 +147,7 @@ def show_data_source_section() -> DataConfig:
 
         tab1, tab2 = st.tabs(["Raw Data Preview", "Tokenized Output Preview"])
         with tab1:
-            st.subheader("Human-Readable Source Data")
+            st.markdown("#### Human-Readable Source Data")
             try:
                 with st.spinner("Loading raw preview..."):
                     raw_examples = pipeline.get_raw_preview(num_records=5)
@@ -182,7 +182,7 @@ def show_data_source_section() -> DataConfig:
                 st.error(e)
 
         with tab2:
-            st.subheader("Model Input After Tokenization")
+            st.markdown("#### Model Input After Tokenization")
             try:
                 with st.spinner("Loading tokenized preview..."):
                     tokenized_examples = pipeline.get_tokenized_preview(

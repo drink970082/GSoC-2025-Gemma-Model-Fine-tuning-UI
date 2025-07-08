@@ -1,0 +1,288 @@
+HloModule jit_threefry2x32, is_scheduled=true, entry_computation_layout={(u32[], u32[], u32[], u32[])->(u32[], u32[])}, allow_spmd_sharding_propagation_to_parameters={true,true,true,true}, allow_spmd_sharding_propagation_to_output={true,true}, frontend_attributes={fingerprint_before_lhs="0a7d518b63701ee23a51bc815a853562"}
+
+%fused_add (param_0.141: u32[], param_1.190: u32[], param_2.201: u32[], param_3.179: u32[]) -> u32[] {
+  %param_3.179 = u32[] parameter(3)
+  %param_0.141 = u32[] parameter(0)
+  %add.0.25 = u32[] add(%param_3.179, %param_0.141), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %param_2.201 = u32[] parameter(2)
+  %param_1.190 = u32[] parameter(1)
+  %add.1.50 = u32[] add(%param_2.201, %param_1.190), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.2.25 = u32[] add(%add.0.25, %add.1.50), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_0_1 = u32[] constant(13)
+  %shift-left.0.25 = u32[] shift-left(%add.1.50, %constant_0_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_1_1 = u32[] constant(19)
+  %shift-right-logical.0.25 = u32[] shift-right-logical(%add.1.50, %constant_1_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.0.25 = u32[] or(%shift-left.0.25, %shift-right-logical.0.25), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.0.25 = u32[] xor(%add.2.25, %or.0.25), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.3.76 = u32[] add(%add.2.25, %xor.0.25), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_2_2 = u32[] constant(15)
+  %shift-left.1.25 = u32[] shift-left(%xor.0.25, %constant_2_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_3_2 = u32[] constant(17)
+  %shift-right-logical.1.25 = u32[] shift-right-logical(%xor.0.25, %constant_3_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.1.25 = u32[] or(%shift-left.1.25, %shift-right-logical.1.25), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.1.25 = u32[] xor(%add.3.76, %or.1.25), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.4.51 = u32[] add(%add.3.76, %xor.1.25), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_4_2 = u32[] constant(26)
+  %shift-left.2.25 = u32[] shift-left(%xor.1.25, %constant_4_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_5_2 = u32[] constant(6)
+  %shift-right-logical.2.25 = u32[] shift-right-logical(%xor.1.25, %constant_5_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.2.25 = u32[] or(%shift-left.2.25, %shift-right-logical.2.25), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.2.25 = u32[] xor(%add.4.51, %or.2.25), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.5.22 = u32[] add(%add.4.51, %xor.2.25), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.6.11 = u32[] add(%add.5.22, %param_1.190), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.3.11 = u32[] shift-left(%xor.2.25, %constant_5_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.3.11 = u32[] shift-right-logical(%xor.2.25, %constant_4_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.3.11 = u32[] or(%shift-left.3.11, %shift-right-logical.3.11), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.3.11 = u32[] xor(%add.5.22, %or.3.11), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.4.25 = u32[] xor(%param_0.141, %param_1.190), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_6_2 = u32[] constant(466688986)
+  %xor.5.25 = u32[] xor(%xor.4.25, %constant_6_2), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.7.11 = u32[] add(%xor.3.11, %xor.5.25), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_7_1 = u32[] constant(1)
+  %add.8.11 = u32[] add(%add.7.11, %constant_7_1), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.9.11 = u32[] add(%add.6.11, %add.8.11), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.4.23 = u32[] shift-left(%add.8.11, %constant_3_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.4.23 = u32[] shift-right-logical(%add.8.11, %constant_2_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.4.23 = u32[] or(%shift-left.4.23, %shift-right-logical.4.23), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.6.23 = u32[] xor(%add.9.11, %or.4.23), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.10.46 = u32[] add(%add.9.11, %xor.6.23), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_8_2 = u32[] constant(29)
+  %shift-left.5.11 = u32[] shift-left(%xor.6.23, %constant_8_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_9_2 = u32[] constant(3)
+  %shift-right-logical.5.11 = u32[] shift-right-logical(%xor.6.23, %constant_9_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.5.11 = u32[] or(%shift-left.5.11, %shift-right-logical.5.11), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.7.11 = u32[] xor(%add.10.46, %or.5.11), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.11.35 = u32[] add(%add.10.46, %xor.7.11), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_26_1 = u32[] constant(16)
+  %shift-left.6.17 = u32[] shift-left(%xor.7.11, %constant_26_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.6.17 = u32[] shift-right-logical(%xor.7.11, %constant_26_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.6.17 = u32[] or(%shift-left.6.17, %shift-right-logical.6.17), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.8.17 = u32[] xor(%add.11.35, %or.6.17), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.12.14 = u32[] add(%add.11.35, %xor.8.17), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.13.3 = u32[] add(%add.12.14, %xor.5.25), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_27_2 = u32[] constant(24)
+  %shift-left.7.11 = u32[] shift-left(%xor.8.17, %constant_27_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_28_2 = u32[] constant(8)
+  %shift-right-logical.7.11 = u32[] shift-right-logical(%xor.8.17, %constant_28_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.7.11 = u32[] or(%shift-left.7.11, %shift-right-logical.7.11), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.9.11 = u32[] xor(%add.12.14, %or.7.11), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.14.11 = u32[] add(%xor.9.11, %param_0.141), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_29_1 = u32[] constant(2)
+  %add.15.11 = u32[] add(%add.14.11, %constant_29_1), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.16.3 = u32[] add(%add.13.3, %add.15.11), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.8.5 = u32[] shift-left(%add.15.11, %constant_0_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.8.5 = u32[] shift-right-logical(%add.15.11, %constant_1_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.8.5 = u32[] or(%shift-left.8.5, %shift-right-logical.8.5), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.10.5 = u32[] xor(%add.16.3, %or.8.5), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.17.64 = u32[] add(%add.16.3, %xor.10.5), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.9.17 = u32[] shift-left(%xor.10.5, %constant_2_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.9.17 = u32[] shift-right-logical(%xor.10.5, %constant_3_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.9.17 = u32[] or(%shift-left.9.17, %shift-right-logical.9.17), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.11.17 = u32[] xor(%add.17.64, %or.9.17), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.18.47 = u32[] add(%add.17.64, %xor.11.17), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.10.23 = u32[] shift-left(%xor.11.17, %constant_4_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.10.23 = u32[] shift-right-logical(%xor.11.17, %constant_5_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.10.23 = u32[] or(%shift-left.10.23, %shift-right-logical.10.23), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.12.23 = u32[] xor(%add.18.47, %or.10.23), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.19.20 = u32[] add(%add.18.47, %xor.12.23), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.20.3 = u32[] add(%add.19.20, %param_0.141), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.11.17 = u32[] shift-left(%xor.12.23, %constant_5_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.11.17 = u32[] shift-right-logical(%xor.12.23, %constant_4_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.11.17 = u32[] or(%shift-left.11.17, %shift-right-logical.11.17), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.13.17 = u32[] xor(%add.19.20, %or.11.17), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.21.17 = u32[] add(%xor.13.17, %param_1.190), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.22.17 = u32[] add(%add.21.17, %constant_9_2), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.23.3 = u32[] add(%add.20.3, %add.22.17), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.12.7 = u32[] shift-left(%add.22.17, %constant_3_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.12.7 = u32[] shift-right-logical(%add.22.17, %constant_2_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.12.7 = u32[] or(%shift-left.12.7, %shift-right-logical.12.7), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.14.7 = u32[] xor(%add.23.3, %or.12.7), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.24.22 = u32[] add(%add.23.3, %xor.14.7), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.13.7 = u32[] shift-left(%xor.14.7, %constant_8_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.13.7 = u32[] shift-right-logical(%xor.14.7, %constant_9_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.13.7 = u32[] or(%shift-left.13.7, %shift-right-logical.13.7), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.15.7 = u32[] xor(%add.24.22, %or.13.7), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.25.15 = u32[] add(%add.24.22, %xor.15.7), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.14.7 = u32[] shift-left(%xor.15.7, %constant_26_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.14.7 = u32[] shift-right-logical(%xor.15.7, %constant_26_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.14.7 = u32[] or(%shift-left.14.7, %shift-right-logical.14.7), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.16.7 = u32[] xor(%add.25.15, %or.14.7), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.26.4 = u32[] add(%add.25.15, %xor.16.7), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.27.3 = u32[] add(%add.26.4, %param_1.190), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.15.5 = u32[] shift-left(%xor.16.7, %constant_27_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.15.5 = u32[] shift-right-logical(%xor.16.7, %constant_28_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.15.5 = u32[] or(%shift-left.15.5, %shift-right-logical.15.5), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.17.5 = u32[] xor(%add.26.4, %or.15.5), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.31.5 = u32[] add(%xor.17.5, %xor.5.25), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_30_1 = u32[] constant(4)
+  %add.32.5 = u32[] add(%add.31.5, %constant_30_1), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.33.3 = u32[] add(%add.27.3, %add.32.5), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.16.7 = u32[] shift-left(%add.32.5, %constant_0_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.16.7 = u32[] shift-right-logical(%add.32.5, %constant_1_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.16.7 = u32[] or(%shift-left.16.7, %shift-right-logical.16.7), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.18.7 = u32[] xor(%add.33.3, %or.16.7), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.34.6 = u32[] add(%add.33.3, %xor.18.7), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.17.5 = u32[] shift-left(%xor.18.7, %constant_2_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.17.5 = u32[] shift-right-logical(%xor.18.7, %constant_3_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.17.5 = u32[] or(%shift-left.17.5, %shift-right-logical.17.5), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.19.5 = u32[] xor(%add.34.6, %or.17.5), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.36.5 = u32[] add(%add.34.6, %xor.19.5), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.18.5 = u32[] shift-left(%xor.19.5, %constant_4_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.18.5 = u32[] shift-right-logical(%xor.19.5, %constant_5_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.18.5 = u32[] or(%shift-left.18.5, %shift-right-logical.18.5), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.20.5 = u32[] xor(%add.36.5, %or.18.5), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.37.2 = u32[] add(%add.36.5, %xor.20.5), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.19.1 = u32[] shift-left(%xor.20.5, %constant_5_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.19.1 = u32[] shift-right-logical(%xor.20.5, %constant_4_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.19.1 = u32[] or(%shift-left.19.1, %shift-right-logical.19.1), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.21.1 = u32[] xor(%add.37.2, %or.19.1), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.39.1 = u32[] add(%xor.21.1, %param_0.141), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_31_1 = u32[] constant(5)
+  ROOT %add.41.1 = u32[] add(%add.39.1, %constant_31_1), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+}
+
+%fused_add.1 (param_0.140: u32[], param_1.189: u32[], param_2.200: u32[], param_3.178: u32[]) -> u32[] {
+  %param_3.178 = u32[] parameter(3)
+  %param_0.140 = u32[] parameter(0)
+  %add.0.29 = u32[] add(%param_3.178, %param_0.140), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %param_2.200 = u32[] parameter(2)
+  %param_1.189 = u32[] parameter(1)
+  %add.1.58 = u32[] add(%param_2.200, %param_1.189), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.2.29 = u32[] add(%add.0.29, %add.1.58), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_0_2 = u32[] constant(13)
+  %shift-left.0.29 = u32[] shift-left(%add.1.58, %constant_0_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_1_2 = u32[] constant(19)
+  %shift-right-logical.0.29 = u32[] shift-right-logical(%add.1.58, %constant_1_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.0.29 = u32[] or(%shift-left.0.29, %shift-right-logical.0.29), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.0.29 = u32[] xor(%add.2.29, %or.0.29), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.3.88 = u32[] add(%add.2.29, %xor.0.29), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_2_1 = u32[] constant(15)
+  %shift-left.1.29 = u32[] shift-left(%xor.0.29, %constant_2_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_3_1 = u32[] constant(17)
+  %shift-right-logical.1.29 = u32[] shift-right-logical(%xor.0.29, %constant_3_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.1.29 = u32[] or(%shift-left.1.29, %shift-right-logical.1.29), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.1.29 = u32[] xor(%add.3.88, %or.1.29), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.4.59 = u32[] add(%add.3.88, %xor.1.29), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_4_1 = u32[] constant(26)
+  %shift-left.2.29 = u32[] shift-left(%xor.1.29, %constant_4_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_5_1 = u32[] constant(6)
+  %shift-right-logical.2.29 = u32[] shift-right-logical(%xor.1.29, %constant_5_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.2.29 = u32[] or(%shift-left.2.29, %shift-right-logical.2.29), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.2.29 = u32[] xor(%add.4.59, %or.2.29), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.5.26 = u32[] add(%add.4.59, %xor.2.29), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.6.13 = u32[] add(%add.5.26, %param_1.189), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.3.13 = u32[] shift-left(%xor.2.29, %constant_5_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.3.13 = u32[] shift-right-logical(%xor.2.29, %constant_4_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.3.13 = u32[] or(%shift-left.3.13, %shift-right-logical.3.13), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.3.13 = u32[] xor(%add.5.26, %or.3.13), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.4.29 = u32[] xor(%param_0.140, %param_1.189), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_6_1 = u32[] constant(466688986)
+  %xor.5.29 = u32[] xor(%xor.4.29, %constant_6_1), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.7.13 = u32[] add(%xor.3.13, %xor.5.29), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_7_2 = u32[] constant(1)
+  %add.8.13 = u32[] add(%add.7.13, %constant_7_2), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.9.13 = u32[] add(%add.6.13, %add.8.13), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.4.27 = u32[] shift-left(%add.8.13, %constant_3_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.4.27 = u32[] shift-right-logical(%add.8.13, %constant_2_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.4.27 = u32[] or(%shift-left.4.27, %shift-right-logical.4.27), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.6.27 = u32[] xor(%add.9.13, %or.4.27), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.10.56 = u32[] add(%add.9.13, %xor.6.27), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_8_1 = u32[] constant(29)
+  %shift-left.5.13 = u32[] shift-left(%xor.6.27, %constant_8_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_9_1 = u32[] constant(3)
+  %shift-right-logical.5.13 = u32[] shift-right-logical(%xor.6.27, %constant_9_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.5.13 = u32[] or(%shift-left.5.13, %shift-right-logical.5.13), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.7.13 = u32[] xor(%add.10.56, %or.5.13), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.11.43 = u32[] add(%add.10.56, %xor.7.13), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_26_2 = u32[] constant(16)
+  %shift-left.6.21 = u32[] shift-left(%xor.7.13, %constant_26_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.6.21 = u32[] shift-right-logical(%xor.7.13, %constant_26_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.6.21 = u32[] or(%shift-left.6.21, %shift-right-logical.6.21), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.8.21 = u32[] xor(%add.11.43, %or.6.21), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.12.18 = u32[] add(%add.11.43, %xor.8.21), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.13.5 = u32[] add(%add.12.18, %xor.5.29), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_27_1 = u32[] constant(24)
+  %shift-left.7.13 = u32[] shift-left(%xor.8.21, %constant_27_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_28_1 = u32[] constant(8)
+  %shift-right-logical.7.13 = u32[] shift-right-logical(%xor.8.21, %constant_28_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.7.13 = u32[] or(%shift-left.7.13, %shift-right-logical.7.13), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.9.13 = u32[] xor(%add.12.18, %or.7.13), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.14.13 = u32[] add(%xor.9.13, %param_0.140), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_29_2 = u32[] constant(2)
+  %add.15.13 = u32[] add(%add.14.13, %constant_29_2), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.16.5 = u32[] add(%add.13.5, %add.15.13), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.8.3 = u32[] shift-left(%add.15.13, %constant_0_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.8.3 = u32[] shift-right-logical(%add.15.13, %constant_1_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.8.3 = u32[] or(%shift-left.8.3, %shift-right-logical.8.3), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.10.3 = u32[] xor(%add.16.5, %or.8.3), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.17.74 = u32[] add(%add.16.5, %xor.10.3), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.9.19 = u32[] shift-left(%xor.10.3, %constant_2_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.9.19 = u32[] shift-right-logical(%xor.10.3, %constant_3_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.9.19 = u32[] or(%shift-left.9.19, %shift-right-logical.9.19), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.11.19 = u32[] xor(%add.17.74, %or.9.19), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.18.55 = u32[] add(%add.17.74, %xor.11.19), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.10.27 = u32[] shift-left(%xor.11.19, %constant_4_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.10.27 = u32[] shift-right-logical(%xor.11.19, %constant_5_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.10.27 = u32[] or(%shift-left.10.27, %shift-right-logical.10.27), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.12.27 = u32[] xor(%add.18.55, %or.10.27), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.19.24 = u32[] add(%add.18.55, %xor.12.27), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.20.5 = u32[] add(%add.19.24, %param_0.140), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.11.19 = u32[] shift-left(%xor.12.27, %constant_5_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.11.19 = u32[] shift-right-logical(%xor.12.27, %constant_4_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.11.19 = u32[] or(%shift-left.11.19, %shift-right-logical.11.19), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.13.19 = u32[] xor(%add.19.24, %or.11.19), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.21.19 = u32[] add(%xor.13.19, %param_1.189), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.22.19 = u32[] add(%add.21.19, %constant_9_1), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.23.5 = u32[] add(%add.20.5, %add.22.19), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.12.3 = u32[] shift-left(%add.22.19, %constant_3_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.12.3 = u32[] shift-right-logical(%add.22.19, %constant_2_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.12.3 = u32[] or(%shift-left.12.3, %shift-right-logical.12.3), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.14.3 = u32[] xor(%add.23.5, %or.12.3), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.24.28 = u32[] add(%add.23.5, %xor.14.3), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.13.9 = u32[] shift-left(%xor.14.3, %constant_8_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.13.9 = u32[] shift-right-logical(%xor.14.3, %constant_9_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.13.9 = u32[] or(%shift-left.13.9, %shift-right-logical.13.9), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.15.9 = u32[] xor(%add.24.28, %or.13.9), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.25.19 = u32[] add(%add.24.28, %xor.15.9), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.14.9 = u32[] shift-left(%xor.15.9, %constant_26_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.14.9 = u32[] shift-right-logical(%xor.15.9, %constant_26_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.14.9 = u32[] or(%shift-left.14.9, %shift-right-logical.14.9), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.16.9 = u32[] xor(%add.25.19, %or.14.9), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.26.6 = u32[] add(%add.25.19, %xor.16.9), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.27.5 = u32[] add(%add.26.6, %param_1.189), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.15.3 = u32[] shift-left(%xor.16.9, %constant_27_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.15.3 = u32[] shift-right-logical(%xor.16.9, %constant_28_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.15.3 = u32[] or(%shift-left.15.3, %shift-right-logical.15.3), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.17.3 = u32[] xor(%add.26.6, %or.15.3), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.31.3 = u32[] add(%xor.17.3, %xor.5.29), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %constant_30_2 = u32[] constant(4)
+  %add.32.3 = u32[] add(%add.31.3, %constant_30_2), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.33.5 = u32[] add(%add.27.5, %add.32.3), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.16.3 = u32[] shift-left(%add.32.3, %constant_0_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.16.3 = u32[] shift-right-logical(%add.32.3, %constant_1_2), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.16.3 = u32[] or(%shift-left.16.3, %shift-right-logical.16.3), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.18.3 = u32[] xor(%add.33.5, %or.16.3), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.34.8 = u32[] add(%add.33.5, %xor.18.3), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.17.3 = u32[] shift-left(%xor.18.3, %constant_2_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.17.3 = u32[] shift-right-logical(%xor.18.3, %constant_3_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.17.3 = u32[] or(%shift-left.17.3, %shift-right-logical.17.3), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.19.3 = u32[] xor(%add.34.8, %or.17.3), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.36.7 = u32[] add(%add.34.8, %xor.19.3), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-left.18.3 = u32[] shift-left(%xor.19.3, %constant_4_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_left" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %shift-right-logical.18.3 = u32[] shift-right-logical(%xor.19.3, %constant_5_1), metadata={op_name="jit(threefry2x32)/jit(main)/shift_right_logical" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %or.18.3 = u32[] or(%shift-left.18.3, %shift-right-logical.18.3), metadata={op_name="jit(threefry2x32)/jit(main)/or" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %xor.20.3 = u32[] xor(%add.36.7, %or.18.3), metadata={op_name="jit(threefry2x32)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %add.37.1 = u32[] add(%add.36.7, %xor.20.3), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  ROOT %add.38.1 = u32[] add(%add.37.1, %xor.5.29), metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+}
+
+ENTRY %main.150 (Arg_0.1: u32[], Arg_1.2: u32[], Arg_2.3: u32[], Arg_3.4: u32[]) -> (u32[], u32[]) {
+  %Arg_3.4 = u32[] parameter(3), metadata={op_name="args[3]"}
+  %Arg_2.3 = u32[] parameter(2), metadata={op_name="args[2]"}
+  %Arg_1.2 = u32[] parameter(1), metadata={op_name="args[1]"}
+  %Arg_0.1 = u32[] parameter(0), metadata={op_name="args[0]"}
+  %loop_add_fusion.1 = u32[] fusion(%Arg_0.1, %Arg_1.2, %Arg_3.4, %Arg_2.3), kind=kLoop, calls=%fused_add.1, metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  %loop_add_fusion = u32[] fusion(%Arg_0.1, %Arg_1.2, %Arg_3.4, %Arg_2.3), kind=kLoop, calls=%fused_add, metadata={op_name="jit(threefry2x32)/jit(main)/add" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
+  ROOT %tuple.149.0 = (u32[], u32[]) tuple(%loop_add_fusion.1, %loop_add_fusion)
+}
+

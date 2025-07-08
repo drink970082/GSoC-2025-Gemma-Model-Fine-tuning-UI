@@ -64,7 +64,7 @@ class TrainingService:
         """
         try:
             processes_stopped = self.process_manager.terminate_process(
-                mode=mode
+                mode=mode, delete_checkpoint=True
             )
             self._reset_work_dir()
             self.tensorboard_manager.reset_training_time()

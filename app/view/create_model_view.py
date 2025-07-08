@@ -27,15 +27,13 @@ from config.dataclass import (
 
 def _get_config(
     model_name: str,
-    method_config: MethodConfig,
     data_config: DataConfig,
     model_config: ModelConfig,
 ) -> TrainingConfig:
     training_config = None
-    if model_name and method_config and data_config and model_config:
+    if model_name and data_config and model_config:
         training_config = TrainingConfig(
             model_name=model_name,
-            method_config=method_config,
             data_config=data_config,
             model_config=model_config,
         )
@@ -44,7 +42,6 @@ def _get_config(
 
 def show_create_model_view(training_service: TrainingService):
     """Display the create model interface."""
-    config = {}
     st.subheader("1. Model Name")
     model_name = show_model_name_section()
     st.divider()
@@ -72,8 +69,8 @@ def show_create_model_view(training_service: TrainingService):
         ):
             training_service.start_training(training_config)
             st.session_state.session_started_by_app = True
-            while not training_service.wait_for_lock_file():
-                time.sleep(1)
-
-        st.session_state.view = "training_dashboard"
-        st.rerun()
+            if training_service.wait_for_lock_file():
+                st.session_state.view = "training_dashboard"
+                st.rerun()
+            else:
+                st.error("Training failed to start. Please try again.")

@@ -1,33 +1,22 @@
 import streamlit as st
 from pathlib import Path
+from config.app_config import get_config
 import os
 import shutil
-from config.app_config import get_config
+from typing import Optional
 from backend.core.model import Model
 from gemma import gm
-from typing import Optional
 import json
 from config.dataclass import ModelConfig, LoraParams, DpoParams
+
 
 config = get_config()
 
 
-def parse_model_config(model_config_dict: dict) -> ModelConfig:
-    # Handle the parameters field
-    parameters = None
-    model_config_dict = config["model_config"]
-    if model_config_dict.get("parameters"):
-        if model_config_dict["method"] == "LoRA":
-            parameters = LoraParams(**model_config_dict["parameters"])
-        elif model_config_dict["method"] == "DPO":
-            parameters = DpoParams(**model_config_dict["parameters"])
-    return ModelConfig(
-        model_variant=model_config_dict["model_variant"],
-        epochs=model_config_dict["epochs"],
-        learning_rate=model_config_dict["learning_rate"],
-        method=model_config_dict["method"],
-        parameters=parameters,
-    )
+def get_checkpoint_path(work_dir: str) -> str:
+    checkpoint_path = os.path.join(work_dir, "checkpoints")
+    subdirs = [p for p in Path(checkpoint_path).iterdir() if p.is_dir()]
+    return subdirs[0]
 
 
 def list_checkpoints(work_dir: str) -> list[str]:
@@ -56,6 +45,24 @@ def delete_checkpoint(work_dir: str, checkpoint_name: str) -> bool:
     return False
 
 
+def parse_model_config(model_config_dict: dict) -> ModelConfig:
+    # Handle the parameters field
+    parameters = None
+    model_config_dict = config["model_config"]
+    if model_config_dict.get("parameters"):
+        if model_config_dict["method"] == "LoRA":
+            parameters = LoraParams(**model_config_dict["parameters"])
+        elif model_config_dict["method"] == "DPO":
+            parameters = DpoParams(**model_config_dict["parameters"])
+    return ModelConfig(
+        model_variant=model_config_dict["model_variant"],
+        epochs=model_config_dict["epochs"],
+        learning_rate=model_config_dict["learning_rate"],
+        method=model_config_dict["method"],
+        parameters=parameters,
+    )
+
+
 def load_model(
     checkpoint_path: Optional[str] = None,
 ) -> Optional[tuple[gm.text.ChatSampler, gm.text.Gemma3Tokenizer]]:
@@ -69,7 +76,7 @@ def load_model(
             return None, None
 
     # Load trained parameters from the latest checkpoint
-    params = Model.load_trained_params(checkpoint_path)
+    params = Model.load_trained_params(get_checkpoint_path(checkpoint_path))
     model_config: ModelConfig = parse_model_config(
         json.load(open(f"{checkpoint_path}/model_config.json"))
     )
@@ -93,17 +100,7 @@ def load_model(
     return sampler, tokenizer
 
 
-def show_inference_playground():
-    """
-    Displays the interactive inference playground components, including
-    the prompt input, generate button, and response display.
-    """
-    # Checkpoint selection and management
-    if "sampler" not in st.session_state:
-        st.session_state.sampler = None
-    if "tokenizer" not in st.session_state:
-        st.session_state.tokenizer = None
-
+def show_checkpoint_selection():
     st.subheader("Checkpoint Management")
     checkpoints = list_checkpoints(config.CHECKPOINT_FOLDER)
     if not checkpoints:
@@ -138,43 +135,3 @@ def show_inference_playground():
                 st.rerun()
             else:
                 st.error("Failed to delete checkpoint.")
-
-    st.divider()
-    # Inference interface
-    st.subheader("Inference Playground")
-    prompt = st.text_area(
-        "Enter your prompt:",
-        placeholder="Type your message here...",
-        height=100,
-    )
-    if st.button("Generate Response", type="primary", use_container_width=True):
-        if not prompt.strip():
-            st.warning("Please enter a prompt.")
-            return
-
-        with st.spinner("Generating response..."):
-            try:
-                if "sampler" not in st.session_state:
-                    st.error(
-                        "No sampler found. Please load a checkpoint first."
-                    )
-                    return
-                response = st.session_state.sampler.chat(prompt)
-
-                st.subheader("Response")
-                st.write(response)
-
-                # Show token info if the tokenizer is available
-                if st.session_state.tokenizer:
-                    input_tokens = len(
-                        st.session_state.tokenizer.encode(prompt)
-                    )
-                    output_tokens = len(
-                        st.session_state.tokenizer.encode(response)
-                    )
-                    st.caption(
-                        f"Input tokens: {input_tokens} | Output tokens: {output_tokens}"
-                    )
-
-            except Exception as e:
-                st.error(f"Error during generation: {str(e)}")

@@ -32,7 +32,7 @@ class StatusManager(BaseManager):
         except FileNotFoundError:
             return "Initializing"
 
-    def set_work_dir(self, work_dir: str) -> None:
+    def set_work_dir(self, work_dir: str | None) -> None:
         """Set the work directory and derive file paths."""
         super().set_work_dir(work_dir)
         if work_dir:

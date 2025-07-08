@@ -19,8 +19,9 @@ class Trainer:
         num_train_steps,
     ) -> kd.train.Trainer:
         checkpointer = kd.ckpts.Checkpointer(
-            save_interval_steps=100,
-            save_on_steps=[num_train_steps],  # Explicitly save at final step
+            save_on_steps=[
+                num_train_steps + 1
+            ]
         )
         trainer = kd.train.Trainer(
             seed=42,

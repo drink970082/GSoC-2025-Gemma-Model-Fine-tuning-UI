@@ -1,0 +1,17 @@
+Total bytes used: 32 (32B)
+
+Allocations sorted by size:
+
+cumulative_size; total_size - cumulative_size; allocation
+------------------------------------------------------------------------------
+       16B( 50%);        16B; allocation 0: size 16B, output shape is |(u32[], u32[])|, maybe-live-out:
+       24B( 75%);         8B; allocation 1: size 8B, parameter 0, shape |u32[2]| at ShapeIndex {}:
+       28B( 88%);         4B; allocation 2: size 4B, maybe-live-out:
+       32B(100%);         0B; allocation 3: size 4B, maybe-live-out:
+
+
+Allocations sorted by size with their values:
+allocation 0: size 16B, output shape is |(u32[], u32[])|, maybe-live-out:
+allocation 1: size 8B, parameter 0, shape |u32[2]| at ShapeIndex {}:
+allocation 2: size 4B, maybe-live-out:
+allocation 3: size 4B, maybe-live-out:
