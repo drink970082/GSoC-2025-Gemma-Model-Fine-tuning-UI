@@ -1,7 +1,0 @@
-HloModule jit_convert_element_type, is_scheduled=true, entry_computation_layout={(s32[])->s32[]}, allow_spmd_sharding_propagation_to_parameters={true}, allow_spmd_sharding_propagation_to_output={true}, frontend_attributes={fingerprint_before_lhs="773793e3969963aef3f08ad7490394ca"}
-
-ENTRY %main.2 (Arg_0.1: s32[]) -> s32[] {
-  %Arg_0.1 = s32[] parameter(0), metadata={op_name="args[0]"}
-  ROOT %copy.1 = s32[] copy(%Arg_0.1)
-}
-

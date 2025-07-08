@@ -56,3 +56,5 @@ tensorboard_logs/
 # cursor
 .cursor/
 .cursorrules
+
+xla/

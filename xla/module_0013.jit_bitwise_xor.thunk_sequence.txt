@@ -1,1 +1,0 @@
-kKernel	, kernel = wrapped_xor, launch dimensions = blocks: {1, 1, 1}, threads/block: {1, 1, 1}, cluster_dim = nullopt

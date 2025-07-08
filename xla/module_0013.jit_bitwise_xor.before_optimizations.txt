@@ -1,8 +1,0 @@
-HloModule jit_bitwise_xor, entry_computation_layout={(u32[], u32[])->u32[]}, allow_spmd_sharding_propagation_to_parameters={true,true}, allow_spmd_sharding_propagation_to_output={true}
-
-ENTRY %main.4 (Arg_0.1: u32[], Arg_1.2: u32[]) -> u32[] {
-  %Arg_0.1 = u32[] parameter(0), metadata={op_name="x"}
-  %Arg_1.2 = u32[] parameter(1), metadata={op_name="y"}
-  ROOT %xor.3 = u32[] xor(%Arg_0.1, %Arg_1.2), metadata={op_name="jit(bitwise_xor)/jit(main)/xor" source_file="/home/halcyon/root/gemma_fine_tuning_ui/backend/data_pipeline.py" source_line=119}
-}
-

@@ -1,2 +1,0 @@
-kKernel	, kernel = loop_add_fusion_1, launch dimensions = blocks: {1, 1, 1}, threads/block: {1, 1, 1}, cluster_dim = nullopt
-kKernel	, kernel = loop_add_fusion, launch dimensions = blocks: {1, 1, 1}, threads/block: {1, 1, 1}, cluster_dim = nullopt

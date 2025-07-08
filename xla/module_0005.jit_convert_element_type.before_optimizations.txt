@@ -1,6 +1,0 @@
-HloModule jit_convert_element_type, entry_computation_layout={(u32[])->u32[]}, allow_spmd_sharding_propagation_to_parameters={true}, allow_spmd_sharding_propagation_to_output={true}
-
-ENTRY %main.2 (Arg_0.1: u32[]) -> u32[] {
-  ROOT %Arg_0.1 = u32[] parameter(0), metadata={op_name="args[0]"}
-}
-

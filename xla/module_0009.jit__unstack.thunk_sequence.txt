@@ -1,2 +1,0 @@
-kKernel	, kernel = wrapped_slice_1, launch dimensions = blocks: {1, 1, 1}, threads/block: {1, 1, 1}, cluster_dim = nullopt
-kKernel	, kernel = wrapped_slice, launch dimensions = blocks: {1, 1, 1}, threads/block: {1, 1, 1}, cluster_dim = nullopt
