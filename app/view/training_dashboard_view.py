@@ -20,12 +20,15 @@ def poll_training_status(training_service: TrainingService):
     If training was active, this fragment checks if it has stopped.
     If so, it triggers a rerun to update the control panel to its terminal state.
     """
+    if st.session_state.abort_training:
+        return
     if (
         training_service.is_training_running() == TrainingStatus.FINISHED
         or training_service.is_training_running() == TrainingStatus.FAILED
     ) and st.session_state.session_started_by_app:
         st.session_state.session_started_by_app = False
         st.rerun()
+
     status = training_service.get_training_status()
     training_service.poll_system_usage()
     training_service.get_tensorboard_data()
@@ -37,6 +40,8 @@ def show_training_dashboard_view(training_service: TrainingService):
     st.title("LLM Fine-Tuning Dashboard")
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
+    if "abort_training" not in st.session_state:
+        st.session_state.abort_training = False
     poll_training_status(training_service)
     # Dashboard Panels
     display_control_panel(training_service)

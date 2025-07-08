@@ -1,3 +1,4 @@
+
 import os
 import signal
 import subprocess
@@ -232,6 +233,8 @@ class ProcessManager(BaseManager):
 
     def read_stdout_log(self) -> str:
         """Reads the content of the standard output log file."""
+        if not self.stdout_log_path:
+            return ""
         try:
             with open(self.stdout_log_path, "r") as f:
                 return f.read()
@@ -240,6 +243,8 @@ class ProcessManager(BaseManager):
 
     def read_stderr_log(self) -> str:
         """Reads the content of the standard error log file."""
+        if not self.stderr_log_path:
+            return ""
         try:
             with open(self.stderr_log_path, "r") as f:
                 return f.read()

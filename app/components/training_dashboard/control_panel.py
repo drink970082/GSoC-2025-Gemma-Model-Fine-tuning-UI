@@ -24,9 +24,8 @@ def _create_shutdown_button(label: str, training_service: TrainingService):
                 "All processes have been shut down."
             )
             st.session_state.session_started_by_app = False
-            if st.button("Go to Welcome Page", use_container_width=True):
-                st.session_state.view = "welcome"
-                st.rerun()
+            st.session_state.abort_training = True
+            st.rerun()
         else:
             st.error(
                 "Failed to stop training processes. Please check the logs."
@@ -69,7 +68,11 @@ def display_control_panel(training_service: TrainingService):
     """
     training_status = training_service.is_training_running()
     log_status = training_service.get_training_status()
-    print(training_status)
+    if st.session_state.abort_training:
+        if st.button("Go to Welcome Page", use_container_width=True):
+            st.session_state.view = "welcome"
+            st.rerun()
+        return
 
     if training_status == TrainingStatus.RUNNING:
         _create_shutdown_button("Abort Training", training_service)
