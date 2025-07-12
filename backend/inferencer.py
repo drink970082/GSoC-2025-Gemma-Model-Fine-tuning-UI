@@ -1,42 +1,51 @@
+import json
 import os
-from pathlib import Path
 import shutil
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Tuple
+
 from gemma import gm
+
 from backend.core.model import Model
 from config.app_config import get_config
-from config.dataclass import TrainingConfig
+from config.dataclass import DpoParams, LoraParams, ModelConfig, TrainingConfig
 
 config = get_config()
+
+# Constants
+CHECKPOINT_SUBDIR = "checkpoints"
+MODEL_CONFIG_FILE = "model_config.json"
 
 
 class Inferencer:
     """Service for running inference with trained models."""
 
-    def __init__(self, training_config: TrainingConfig, work_dir: str):
-        self.training_config: TrainingConfig = training_config
+    def __init__(
+        self,
+        work_dir: Optional[str] = None,
+    ):
         self.model = None
         self.params = None
         self.tokenizer = None
+        self.sampler = None
         self._loaded = False
-        self.work_dir = work_dir
+        self.work_dir = work_dir or config.CHECKPOINT_FOLDER
 
     def list_checkpoints(self) -> list[str]:
         """Return a list of checkpoint directory names, sorted by creation time (newest first)."""
         if not os.path.exists(self.work_dir):
             return []
+
         subdirs = [p for p in Path(self.work_dir).iterdir() if p.is_dir()]
         subdirs.sort(key=lambda p: p.stat().st_ctime, reverse=True)
         return [p.name for p in subdirs]
 
-    def get_latest_checkpoint(self) -> str:
+    def get_latest_checkpoint(self) -> Optional[str]:
         """Return the path of the most recently created checkpoint directory."""
         checkpoints = self.list_checkpoints()
-        if not checkpoints:
-            return None
-        return checkpoints[0]
+        return checkpoints[0] if checkpoints else None
 
-    def delete_checkpoint(self, checkpoint_name):
+    def delete_checkpoint(self, checkpoint_name: str) -> bool:
         """Delete the specified checkpoint directory."""
         checkpoint_path = Path(self.work_dir) / checkpoint_name
         if checkpoint_path.exists() and checkpoint_path.is_dir():
@@ -44,41 +53,79 @@ class Inferencer:
             return True
         return False
 
+    def get_checkpoint_path(self, work_dir: str) -> str:
+        """Get the path to the checkpoint subdirectory."""
+        checkpoint_path = os.path.join(work_dir, CHECKPOINT_SUBDIR)
+        subdirs = [p for p in Path(checkpoint_path).iterdir() if p.is_dir()]
+        return subdirs[0]
+
+    def _parse_model_config(self, model_config_dict: dict) -> ModelConfig:
+        """Parse model configuration from dictionary."""
+        parameters = None
+        if model_config_dict.get("parameters"):
+            method = model_config_dict["method"]
+            if method == "LoRA":
+                parameters = LoraParams(**model_config_dict["parameters"])
+            elif method == "DPO":
+                parameters = DpoParams(**model_config_dict["parameters"])
+
+        return ModelConfig(
+            model_variant=model_config_dict["model_variant"],
+            epochs=model_config_dict["epochs"],
+            learning_rate=model_config_dict["learning_rate"],
+            method=model_config_dict["method"],
+            parameters=parameters,
+        )
+
+    def _create_model_from_config(self, model_config: ModelConfig):
+        """Create model instance based on configuration."""
+        if model_config.method == "LoRA":
+            return Model.create_lora_model(
+                model_config.model_variant, model_config.parameters.lora_rank
+            )
+        else:
+            return Model.create_standard_model(model_config.model_variant)
+
     def load_model(self, checkpoint_path: Optional[str] = None) -> bool:
         """Load the most recent trained model if available."""
-        self._loaded = False
+        self.clear_model()
+
+        # Get checkpoint path
         if checkpoint_path is None:
             checkpoint_path = self.get_latest_checkpoint()
             if not checkpoint_path:
                 return False
-        else:
-            if not os.path.exists(checkpoint_path):
-                return False
 
-        # Load trained parameters from the latest checkpoint
-        self.params = Model.load_trained_params(checkpoint_path)
+        full_checkpoint_path = str(Path(self.work_dir) / checkpoint_path)
+        if not os.path.exists(full_checkpoint_path):
+            return False
 
-        if self.training_config.model_config.method == "LoRA":
-            self.model = Model.create_lora_model(
-                self.training_config.model_config.model_variant,
-                self.training_config.model_config.parameters.lora_rank,
-            )
-        else:
-            self.model = Model.create_standard_model(
-                self.training_config.model_config.model_variant
+        try:
+            # Load trained parameters
+            self.params = Model.load_trained_params(
+                self.get_checkpoint_path(full_checkpoint_path)
             )
 
-        # Create tokenizer
-        self.tokenizer = gm.text.Gemma3Tokenizer()
+            # Load model configuration
+            config_file = os.path.join(full_checkpoint_path, MODEL_CONFIG_FILE)
+            with open(config_file, "r") as f:
+                model_config = self._parse_model_config(json.load(f))
 
-        self.sampler = gm.text.ChatSampler(
-            model=self.model,
-            params=self.params,
-            tokenizer=self.tokenizer,
-        )
+            # Create model
+            self.model = self._create_model_from_config(model_config)
 
-        self._loaded = True
-        return True
+            # Create tokenizer and sampler
+            self.tokenizer = gm.text.Gemma3Tokenizer()
+            self.sampler = gm.text.ChatSampler(
+                model=self.model, params=self.params, tokenizer=self.tokenizer
+            )
+
+            self._loaded = True
+            return True
+
+        except Exception as e:
+            print(f"Error loading model: {str(e)}")
+            return False
 
     def is_loaded(self) -> bool:
         """Check if model is loaded."""
@@ -90,3 +137,25 @@ class Inferencer:
             raise RuntimeError("Model not loaded. Call load_model() first.")
 
         return self.sampler.chat(prompt)
+
+    def get_tokenizer(self) -> Optional[gm.text.Gemma3Tokenizer]:
+        """Get the tokenizer if loaded."""
+        return self.tokenizer if self._loaded else None
+
+    def get_sampler(self) -> Optional[gm.text.ChatSampler]:
+        """Get the sampler if loaded."""
+        return self.sampler if self._loaded else None
+
+    def count_tokens(self, text: str) -> int:
+        """Count tokens in text using the loaded tokenizer."""
+        if not self._loaded or not self.tokenizer:
+            return 0
+        return len(self.tokenizer.encode(text))
+    
+    def clear_model(self) -> None:
+        """Clear all model-related attributes."""
+        self.model = None
+        self.params = None
+        self.tokenizer = None
+        self.sampler = None
+        self._loaded = False

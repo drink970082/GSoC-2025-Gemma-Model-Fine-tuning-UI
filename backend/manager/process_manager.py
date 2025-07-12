@@ -11,7 +11,7 @@ import streamlit as st
 
 from backend.manager.base_manager import BaseManager
 from backend.manager.training_state_manager import TrainingStateManager
-from config.app_config import  get_config
+from config.app_config import get_config
 from config.dataclass import ModelConfig, TrainingConfig
 
 config = get_config()
@@ -216,7 +216,41 @@ class ProcessManager(BaseManager):
         Investigates the lock file and OS to give a definitive status.
         This is the single source of truth for the system's state.
         """
-        return self.training_state_manager.get_state().get("status", "IDLE")
+        state = self.training_state_manager.get_state()
+        status = state.get("status", "IDLE")
+
+        # If status is RUNNING, verify the process is actually running
+        if status == "RUNNING":
+            pid = state.get("pid")
+            if pid and not self._is_process_running(pid):
+                # Process is dead but state file says RUNNING
+                if (
+                    self.training_process
+                    and self.training_process.poll() is not None
+                ):
+                    exit_code = self.training_process.returncode
+                    if exit_code == 0:
+                        self.training_state_manager.mark_finished(
+                            time.strftime("%Y-%m-%dT%H:%M:%S")
+                        )
+                        return "FINISHED"
+                    else:
+                        error_msg = (
+                            self.read_stderr_log()
+                            or "Process exited with non-zero code"
+                        )
+                        self.training_state_manager.mark_failed(
+                            error_msg, time.strftime("%Y-%m-%dT%H:%M:%S")
+                        )
+                        return "FAILED"
+                else:
+                    # Orphaned process
+                    self.training_state_manager.mark_orphaned(
+                        "Process not found"
+                    )
+                    return "ORPHANED"
+
+        return status
 
     def reset_state(self, delete_checkpoint: bool = False) -> None:
         """

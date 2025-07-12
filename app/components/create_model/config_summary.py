@@ -10,4 +10,8 @@ def show_configuration_preview(config: Optional[TrainingConfig]) -> None:
         return
 
     with st.expander("Review Your Configuration", expanded=True):
-        st.json(asdict(config))
+        try:
+            config_dict = asdict(config)
+            st.json(config_dict)
+        except Exception as e:
+            st.error(f"Error displaying configuration: {e}")

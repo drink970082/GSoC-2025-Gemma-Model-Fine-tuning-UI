@@ -7,16 +7,11 @@ from app.components.inference.inference_input_section import (
 )
 
 
-def show_inference_view():
-    """
-    Displays the interactive inference playground components, including
-    the prompt input, generate button, and response display.
-    """
+def show_inference_view() -> None:
+    """Display the inference playground with checkpoint selection and input interface."""
     st.title("Inference Playground")
+    st.subheader("Checkpoint Management")
     show_checkpoint_selection()
     st.divider()
+    st.subheader("Inference Playground")
     show_inference_input_section()
-
-
-if __name__ == "__main__":
-    show_inference_view()

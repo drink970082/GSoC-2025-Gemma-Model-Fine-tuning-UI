@@ -1,9 +1,10 @@
 import streamlit as st
 
+from backend.inferencer import Inferencer
 
-def show_inference_input_section():
-    st.subheader("Inference Playground")
 
+def show_inference_input_section() -> None:
+    """Display the inference input section with a prompt input and a generate button."""
     prompt = st.text_area(
         "Enter your prompt:",
         placeholder="Type your message here...",
@@ -13,38 +14,28 @@ def show_inference_input_section():
         if not prompt.strip():
             st.warning("Please enter a prompt.")
             return
-        print(st.session_state.sampler)
-        print(st.session_state.tokenizer)
-        with st.spinner("Generating response..."):
-            try:
-                if st.session_state.sampler is None:
-                    st.error(
-                        "No sampler found. Please load a checkpoint first."
-                    )
-                    return
-                response = st.session_state.sampler.chat(prompt)
+        _generate_and_display_response(prompt)
+        
+        
+def _generate_and_display_response(prompt: str) -> None:
+    """Generate response and display it with token information."""
+    if st.session_state.inferencer is None or not st.session_state.inferencer.is_loaded():
+        st.error("No model loaded. Please load a checkpoint first.")
+        return
+    
+    with st.spinner("Generating response..."):
+        try:
+            response = st.session_state.inferencer.generate(prompt)
+            st.subheader("Response")
+            st.write(response)
+            _display_token_info(st.session_state.inferencer, prompt, response)
+            
+        except Exception as e:
+            st.error(f"Error during generation: {str(e)}")
 
-                st.subheader("Response")
-                st.write(response)
 
-                # Show token info if the tokenizer is available
-                if st.session_state.tokenizer:
-                    input_tokens = len(
-                        st.session_state.tokenizer.encode(prompt)
-                    )
-                    output_tokens = len(
-                        st.session_state.tokenizer.encode(response)
-                    )
-                if st.session_state.tokenizer:
-                    input_tokens = len(
-                        st.session_state.tokenizer.encode(prompt)
-                    )
-                    output_tokens = len(
-                        st.session_state.tokenizer.encode(response)
-                    )
-                    st.caption(
-                        f"Input tokens: {input_tokens} | Output tokens: {output_tokens}"
-                    )
-
-            except Exception as e:
-                st.error(f"Error during generation: {str(e)}")
+def _display_token_info(inferencer: Inferencer, prompt: str, response: str) -> None:
+    """Display token information"""
+    input_tokens = inferencer.count_tokens(prompt)
+    output_tokens = inferencer.count_tokens(response)
+    st.caption(f"Input tokens: {input_tokens} | Output tokens: {output_tokens}")       

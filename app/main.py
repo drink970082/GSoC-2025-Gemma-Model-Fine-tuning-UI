@@ -3,33 +3,20 @@ import streamlit as st
 from app.view.create_model_view import show_create_model_view
 from app.view.inference_view import show_inference_view
 from app.view.training_dashboard_view import show_training_dashboard_view
-from app.view.welcome_view import display_welcome_modal
+from app.view.welcome_view import show_welcome_modal
 from services.di_container import get_service
 
-# Set page config
-st.set_page_config(
-    page_title="Gemma Fine-tuning UI",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        "Get Help": "https://github.com/drink970082/GSoC-2025-Gemma-Model-Fine-tuning-UI",
-        "Report a bug": "https://github.com/drink970082/GSoC-2025-Gemma-Model-Fine-tuning-UI/issues",
-        "About": "# Gemma Fine-tuning UI\n A user-friendly interface for fine-tuning Google's Gemma models",
-    },
-)
 
-
-def _register_session_state():
+def _initialize_session_state() -> None:
+    """Register the session state."""
     if "view" not in st.session_state:
         st.session_state.view = "welcome"
     if "abort_training" not in st.session_state:
         st.session_state.abort_training = False
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
-    if "sampler" not in st.session_state:
-        st.session_state.sampler = None
-    if "tokenizer" not in st.session_state:
-        st.session_state.tokenizer = None
+    if "inferencer" not in st.session_state:
+        st.session_state.inferencer = None
     if "frozen_kpi_data" not in st.session_state:
         st.session_state.frozen_kpi_data = {}
     if "frozen_log" not in st.session_state:
@@ -41,11 +28,20 @@ def _register_session_state():
 
 
 # --- Main Application ---
-def main():
+def main() -> None:
     """Main function to run the Streamlit app."""
-    # register services
+    st.set_page_config(
+        page_title="Gemma Fine-tuning UI",
+        layout="wide",
+        initial_sidebar_state="expanded",
+        menu_items={
+            "Get Help": "https://github.com/drink970082/GSoC-2025-Gemma-Model-Fine-tuning-UI",
+            "Report a bug": "https://github.com/drink970082/GSoC-2025-Gemma-Model-Fine-tuning-UI/issues",
+            "About": "# Gemma Fine-tuning UI\n A user-friendly interface for fine-tuning Google's Gemma models",
+        },
+    )
     training_service = get_service("training_service")
-    _register_session_state()
+    _initialize_session_state()
 
     # Sidebar for navigation
     with st.sidebar:
@@ -56,7 +52,7 @@ def main():
 
     # Main panel displays the current view
     if st.session_state.view == "welcome":
-        display_welcome_modal(training_service)
+        show_welcome_modal(training_service)
     elif st.session_state.view == "create_model":
         show_create_model_view(training_service)
     elif st.session_state.view == "training_dashboard":

@@ -1,10 +1,34 @@
-import pandas as pd
 import streamlit as st
 
 from services.training_service import TrainingService
 
 
-def _create_loss_plots(loss_metrics: dict):
+
+@st.fragment(run_every=1)
+def display_plots_panel(training_service: TrainingService) -> None:
+    """Display the core performance plots panel."""
+    if st.session_state.abort_training:
+        loss_metrics = st.session_state.frozen_loss_metrics
+        perf_metrics = st.session_state.frozen_perf_metrics
+    else:
+        loss_metrics = training_service.get_loss_metrics()
+        perf_metrics = training_service.get_performance_metrics()
+        st.session_state.frozen_loss_metrics = loss_metrics
+        st.session_state.frozen_perf_metrics = perf_metrics
+
+    if not loss_metrics and not perf_metrics:
+        st.info("Waiting for first metric to be logged...")
+        return
+
+    # Create loss plots
+    if loss_metrics:
+        _create_loss_plots(loss_metrics)
+    # Create performance plots
+    if perf_metrics:
+        _create_perf_plots(perf_metrics)
+
+
+def _create_loss_plots(loss_metrics: dict) -> None:
     """Create the loss plots."""
     st.markdown("### Training Loss")
     loss_cols = st.columns(2)
@@ -21,7 +45,7 @@ def _create_loss_plots(loss_metrics: dict):
                 st.metric("Value", f"{metric_df.iloc[0]['value']:.4f}")
 
 
-def _create_perf_plots(perf_metrics: dict):
+def _create_perf_plots(perf_metrics: dict) -> None:
     """Create the performance plots."""
     st.markdown("### Performance Metrics")
     perf_cols = st.columns(3)
@@ -56,27 +80,3 @@ def _create_perf_plots(perf_metrics: dict):
             use_container_width=True,
         )
 
-
-@st.fragment(run_every=1)
-def display_plots_panel(training_service: TrainingService):
-    """Display the core performance plots panel."""
-    st.subheader("Core Performance Plots")
-    if st.session_state.abort_training:
-        loss_metrics = st.session_state.frozen_loss_metrics
-        perf_metrics = st.session_state.frozen_perf_metrics
-    else:
-        loss_metrics = training_service.get_loss_metrics()
-        perf_metrics = training_service.get_performance_metrics()
-        st.session_state.frozen_loss_metrics = loss_metrics
-        st.session_state.frozen_perf_metrics = perf_metrics
-
-    if not loss_metrics and not perf_metrics:
-        st.info("Waiting for first metric to be logged...")
-        return
-
-    # Create loss plots
-    if loss_metrics:
-        _create_loss_plots(loss_metrics)
-    # Create performance plots
-    if perf_metrics:
-        _create_perf_plots(perf_metrics)
