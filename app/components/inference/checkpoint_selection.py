@@ -48,7 +48,6 @@ def delete_checkpoint(work_dir: str, checkpoint_name: str) -> bool:
 def parse_model_config(model_config_dict: dict) -> ModelConfig:
     # Handle the parameters field
     parameters = None
-    model_config_dict = config["model_config"]
     if model_config_dict.get("parameters"):
         if model_config_dict["method"] == "LoRA":
             parameters = LoraParams(**model_config_dict["parameters"])
@@ -118,6 +117,9 @@ def show_checkpoint_selection():
                 checkpoint_path = str(
                     Path(config.CHECKPOINT_FOLDER) / selected_checkpoint
                 )
+                if not os.path.exists(checkpoint_path):
+                    st.error(f"Checkpoint {selected_checkpoint} not found.")
+                    return
                 sampler, tokenizer = load_model(checkpoint_path)
                 if not sampler:
                     st.error(
@@ -132,6 +134,8 @@ def show_checkpoint_selection():
         if st.button("Delete", type="secondary", use_container_width=True):
             if delete_checkpoint(config.CHECKPOINT_FOLDER, selected_checkpoint):
                 st.success(f"Deleted checkpoint: {selected_checkpoint}")
+                st.session_state.sampler = None
+                st.session_state.tokenizer = None
                 st.rerun()
             else:
                 st.error("Failed to delete checkpoint.")

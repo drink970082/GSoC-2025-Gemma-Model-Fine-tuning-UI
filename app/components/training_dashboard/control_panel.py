@@ -1,7 +1,7 @@
 import time
 import streamlit as st
 from services.training_service import TrainingService
-from config.app_config import get_config, TrainingStatus
+from config.app_config import get_config
 from pathlib import Path
 
 config = get_config()
@@ -20,9 +20,7 @@ def _create_shutdown_button(label: str, training_service: TrainingService):
                 shutdown_ok = training_service.stop_training(mode="force")
 
         if shutdown_ok:
-            st.success(
-                "All processes have been shut down."
-            )
+            st.success("All processes have been shut down.")
             st.session_state.session_started_by_app = False
             st.session_state.abort_training = True
             st.rerun()
@@ -67,19 +65,20 @@ def display_control_panel(training_service: TrainingService):
     This panel changes based on the training state (active, failed, completed).
     """
     training_status = training_service.is_training_running()
-    log_status = training_service.get_training_status()
+    print(f"Training status: {training_status}")
     if st.session_state.abort_training:
+        st.info("Training aborted. Please reset the application.")
         if st.button("Go to Welcome Page", use_container_width=True):
             st.session_state.view = "welcome"
             st.rerun()
         return
 
-    if training_status == TrainingStatus.RUNNING:
+    if training_status == "RUNNING":
         _create_shutdown_button("Abort Training", training_service)
     else:
         latest_checkpoint = _find_latest_checkpoint()
-        if training_status == TrainingStatus.FAILED:
-            st.error(f"Training Failed: {log_status}")
+        if training_status == "FAILED":
+            st.error(f"Training Failed")
             _create_shutdown_button("Reset Application", training_service)
         elif latest_checkpoint is None:
             st.warning(
@@ -87,6 +86,5 @@ def display_control_panel(training_service: TrainingService):
             )
             _create_shutdown_button("Reset Application", training_service)
         else:
-            st.success("Training concluded successfully.")
-            st.info(f"Latest checkpoint found: {latest_checkpoint.name}")
+            st.success(f"Training concluded successfully. Latest checkpoint found: {latest_checkpoint.name}")
             _create_next_step_buttons()

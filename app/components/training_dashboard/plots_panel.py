@@ -60,10 +60,6 @@ def _create_perf_plots(perf_metrics: dict):
 @st.fragment(run_every=1)
 def display_plots_panel(training_service: TrainingService):
     """Display the core performance plots panel."""
-    if "frozen_loss_metrics" not in st.session_state:
-        st.session_state.frozen_loss_metrics = {}
-    if "frozen_perf_metrics" not in st.session_state:
-        st.session_state.frozen_perf_metrics = {}
     st.subheader("Core Performance Plots")
     if st.session_state.abort_training:
         loss_metrics = st.session_state.frozen_loss_metrics

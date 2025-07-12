@@ -94,9 +94,9 @@ def show_model_selection_section() -> ModelConfig:
     with col2:
         learning_rate = st.slider(
             "Learning Rate",
-            min_value=1e-6,
-            max_value=1e-3,
-            value=1e-4,
+            min_value=1e-5,
+            max_value=1e-2,
+            value=1e-3,
             step=1e-6,
             format="%e",
             help="Set the learning rate. Small values like 1e-4 or 1e-5 are common.",

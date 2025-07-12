@@ -68,9 +68,6 @@ def _create_performance_metrics_panel(kpi_data: dict):
 @st.fragment(run_every=1)
 def display_kpi_panel(training_service: TrainingService):
     """Display the key performance indicators panel."""
-    if "frozen_kpi_data" not in st.session_state:
-        st.session_state.frozen_kpi_data = {}
-
     st.subheader("Key Performance Indicators")
     if st.session_state.abort_training:
         kpi_data = st.session_state.frozen_kpi_data

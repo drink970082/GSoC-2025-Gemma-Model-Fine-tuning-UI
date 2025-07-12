@@ -1,8 +1,9 @@
 import streamlit as st
-from app.view.welcome_view import display_welcome_modal
+
 from app.view.create_model_view import show_create_model_view
 from app.view.inference_view import show_inference_view
 from app.view.training_dashboard_view import show_training_dashboard_view
+from app.view.welcome_view import display_welcome_modal
 from services.di_container import get_service
 
 # Set page config
@@ -18,15 +19,33 @@ st.set_page_config(
 )
 
 
+def _register_session_state():
+    if "view" not in st.session_state:
+        st.session_state.view = "welcome"
+    if "abort_training" not in st.session_state:
+        st.session_state.abort_training = False
+    if "session_started_by_app" not in st.session_state:
+        st.session_state.session_started_by_app = False
+    if "sampler" not in st.session_state:
+        st.session_state.sampler = None
+    if "tokenizer" not in st.session_state:
+        st.session_state.tokenizer = None
+    if "frozen_kpi_data" not in st.session_state:
+        st.session_state.frozen_kpi_data = {}
+    if "frozen_log" not in st.session_state:
+        st.session_state.frozen_log = "No logs available."
+    if "frozen_loss_metrics" not in st.session_state:
+        st.session_state.frozen_loss_metrics = {}
+    if "frozen_perf_metrics" not in st.session_state:
+        st.session_state.frozen_perf_metrics = {}
+
+
 # --- Main Application ---
 def main():
     """Main function to run the Streamlit app."""
     # register services
     training_service = get_service("training_service")
-
-    st.title("Gemma Fine-Tuning UI")
-    if "view" not in st.session_state:
-        st.session_state.view = "welcome"
+    _register_session_state()
 
     # Sidebar for navigation
     with st.sidebar:

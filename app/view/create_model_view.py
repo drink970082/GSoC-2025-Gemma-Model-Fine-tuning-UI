@@ -31,9 +31,18 @@ def _get_config(
         )
     return training_config
 
+def _reset_session_state():
+    st.session_state.abort_training = False
+    st.session_state.session_started_by_app = True
+    st.session_state.frozen_kpi_data = {}
+    st.session_state.frozen_log = "No logs available."
+    st.session_state.frozen_loss_metrics = {}
+    st.session_state.frozen_perf_metrics = {}
+
 
 def show_create_model_view(training_service: TrainingService):
     """Display the create model interface."""
+    st.title("Create Model")
     st.subheader("1. Model Name")
     model_name = show_model_name_section()
     st.divider()
@@ -55,8 +64,8 @@ def show_create_model_view(training_service: TrainingService):
             show_time=True,
         ):
             training_service.start_training(training_config)
-            st.session_state.session_started_by_app = True
-            if training_service.wait_for_lock_file():
+            _reset_session_state()
+            if training_service.wait_for_state_file():
                 st.session_state.view = "training_dashboard"
                 st.rerun()
             else:

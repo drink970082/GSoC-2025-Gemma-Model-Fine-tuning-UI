@@ -12,7 +12,7 @@ class Checkpoint:
         return gm.ckpts.LoadCheckpoint(path=checkpoint_path)
 
     @staticmethod
-    def create_lora_checkpoint(model_variant: str, lora_rank: int) -> Any:
+    def create_lora_checkpoint(model_variant: str) -> Any:
         """Create the model checkpoint."""
         base_checkpoint = Checkpoint.create_standard_checkpoint(model_variant)
         return gm.ckpts.SkipLoRA(

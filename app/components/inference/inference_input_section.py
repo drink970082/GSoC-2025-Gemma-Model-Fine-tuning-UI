@@ -13,13 +13,11 @@ def show_inference_input_section():
         if not prompt.strip():
             st.warning("Please enter a prompt.")
             return
-
+        print(st.session_state.sampler)
+        print(st.session_state.tokenizer)
         with st.spinner("Generating response..."):
             try:
-                if (
-                    "sampler" not in st.session_state
-                    or st.session_state.sampler is None
-                ):
+                if st.session_state.sampler is None:
                     st.error(
                         "No sampler found. Please load a checkpoint first."
                     )

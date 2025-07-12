@@ -1,16 +1,5 @@
 import os
 
-from enum import Enum, auto
-
-
-class TrainingStatus(Enum):
-    IDLE = auto()
-    RUNNING = auto()
-    FINISHED = auto()
-    FAILED = auto()
-    ORPHANED = auto()
-
-
 class AppConfig:
     _instance = None
 
@@ -40,7 +29,7 @@ class AppConfig:
     }
 
     # --- Training process constants ---
-    LOCK_FILE = ".training.lock"
+    TRAINING_STATE_FILE = ".training_state.json"
     STATUS_LOG = "status.log"
     CHECKPOINT_FOLDER = os.path.abspath("./checkpoints/")
     TENSORBOARD_LOGDIR = "checkpoints/"

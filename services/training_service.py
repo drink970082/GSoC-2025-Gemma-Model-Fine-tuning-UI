@@ -1,13 +1,14 @@
-import time
 import os
+import time
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional
+
 import streamlit as st
+
 from backend.manager.process_manager import ProcessManager
-from backend.manager.tensorboard_manager import TensorBoardManager
-from backend.manager.status_manager import StatusManager
 from backend.manager.system_manager import SystemManager
-from config.app_config import TrainingStatus
+from backend.manager.tensorboard_manager import TensorBoardManager
+from backend.manager.training_state_manager import TrainingStateManager
 from config.app_config import get_config
 from config.dataclass import TrainingConfig
 
@@ -23,14 +24,14 @@ class TrainingService:
         self,
         process_manager: ProcessManager,
         tensorboard_manager: TensorBoardManager,
-        status_manager: StatusManager,
         system_manager: SystemManager,
+        training_state_manager: TrainingStateManager,
     ):
         """Initialize the training service with DI container."""
         self.process_manager = process_manager
         self.tensorboard_manager = tensorboard_manager
-        self.status_manager = status_manager
         self.system_manager = system_manager
+        self.training_state_manager = training_state_manager
         self.training_config = None
         self.work_dir = None
 
@@ -38,19 +39,22 @@ class TrainingService:
         """
         Starts the training process, using the lock file to prevent duplicates.
         """
-        if self.is_training_running() == TrainingStatus.RUNNING:
+        state = self.training_state_manager.get_state()
+        if state.get("status") == "RUNNING":
             st.warning("Training is already in progress.")
             return
+        
         self.training_config = training_config
         self.process_manager.update_config(training_config)
         self._set_work_dir(training_config.model_name)
         self.tensorboard_manager.reset_training_time()
         self.process_manager.start_training()
 
-    def wait_for_lock_file(self, timeout: int = 10) -> bool:
+    def wait_for_state_file(self, timeout: int = 10) -> bool:
         """Wait for the lock file to be created."""
         for _ in range(timeout):
-            if self.process_manager.is_lock_file_locked():
+            state = self.training_state_manager.get_state()
+            if state.get("status") == "RUNNING":
                 return True
             time.sleep(1)
         st.error("Training process did not start within timeout.")
@@ -63,7 +67,6 @@ class TrainingService:
         Stops the training process and always cleans up the lock file.
         """
         try:
-            self.status_manager.update("Stopping training")
             processes_stopped = self.process_manager.terminate_process(
                 mode=mode, delete_checkpoint=True
             )
@@ -73,15 +76,19 @@ class TrainingService:
         except Exception as e:
             st.error(f"Failed to stop training: {e}")
             return False
+        
+        
 
-    def is_training_running(self) -> TrainingStatus:
+    def is_training_running(self) -> str:
         """
-        Checks if a training run is active by only checking for the lock file.
-        This is the single source of truth for the application's training state.
+        Checks training status using the state manager as the single source of truth.
+        Handles orphan detection and cleanup.
         """
-        status = self.process_manager.get_status()
+        state = self.training_state_manager.get_state()
+        status = state.get("status", "IDLE")
 
-        if status == TrainingStatus.ORPHANED:
+        # Handle orphaned processes
+        if status == "ORPHANED":
             st.warning(
                 "An orphaned training process from a previous session was detected. "
                 "Automatically cleaning up...."
@@ -89,18 +96,19 @@ class TrainingService:
             self.process_manager.force_cleanup()
             st.success("Cleanup complete. The application is now ready.")
             time.sleep(2)
+            return "IDLE"
 
-        if status == TrainingStatus.FINISHED:
+        # Handle finished training
+        if status == "FINISHED":
             self.process_manager.reset_state()
+            return "FINISHED"
 
-        if status == TrainingStatus.FAILED:
+        # Handle failed training
+        if status == "FAILED":
             self.process_manager.reset_state(delete_checkpoint=True)
+            return "FAILED"
 
         return status
-
-    def get_training_status(self) -> str:
-        """Gets the latest status message from the training process."""
-        return self.status_manager.get()
 
     def get_training_config(self) -> Optional[TrainingConfig]:
         """Retrieve the training configuration for the current training run."""
@@ -168,11 +176,8 @@ class TrainingService:
         self.work_dir = os.path.join(config.CHECKPOINT_FOLDER, self.work_dir)
         self.process_manager.set_work_dir(self.work_dir)
         self.tensorboard_manager.set_work_dir(self.work_dir)
-        self.status_manager.set_work_dir(self.work_dir)
-
     def _reset_work_dir(self) -> None:
         """Resets the work directory."""
         self.work_dir = None
         self.process_manager.set_work_dir(self.work_dir)
         self.tensorboard_manager.set_work_dir(self.work_dir)
-        self.status_manager.set_work_dir(self.work_dir)

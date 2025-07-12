@@ -45,7 +45,7 @@ class StandardTrainer(Trainer):
             training_config.model_config.model_variant
         )
         init_transform = Checkpoint.create_standard_checkpoint(
-            training_config.model_config
+            training_config.model_config.model_variant
         )
         optimizer = Optimizer.create_standard_optimizer(
             training_config.model_config.learning_rate
@@ -69,8 +69,7 @@ class LoRATrainer(Trainer):
             training_config.model_config.parameters.lora_rank,
         )
         init_transform = Checkpoint.create_lora_checkpoint(
-            training_config.model_config.model_variant,
-            training_config.model_config.parameters.lora_rank,
+            training_config.model_config.model_variant
         )
         optimizer = Optimizer.create_lora_optimizer(
             training_config.model_config.learning_rate
