@@ -28,9 +28,6 @@ def poll_training_status(training_service: TrainingService) -> None:
         st.session_state.session_started_by_app = False
         st.rerun()
 
-    training_service.poll_system_usage()
-    training_service.get_tensorboard_data()
-
     if status == "RUNNING":
         st.info(f"Training in progress.")
 

@@ -1,13 +1,13 @@
 import json
 import tempfile
-from typing import Optional
+from typing import Optional, List, Dict, Any, Tuple
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import treescope
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from backend.data_pipeline import create_pipeline
+from backend.data_pipeline import create_pipeline, DataPipeline
 from config.dataclass import DataConfig
 
 # Constants
@@ -57,7 +57,7 @@ def show_data_source_section() -> DataConfig:
     return data_config
 
 
-def _get_source_config(data_source: str) -> tuple[str, str, Optional[str], str]:
+def _get_source_config(data_source: str) -> Tuple[str, str, Optional[str], str]:
     """Get configuration for the selected data source."""
     dataset_name = ""
     dataset_config = None
@@ -131,7 +131,7 @@ def _process_uploaded_json(uploaded_file: UploadedFile) -> str:
         return ""
 
 
-def _get_common_config() -> tuple[bool, int]:
+def _get_common_config() -> Tuple[bool, int]:
     """Get common configuration options."""
     col1, col2 = st.columns(2)
 
@@ -154,7 +154,7 @@ def _get_common_config() -> tuple[bool, int]:
     return shuffle, batch_size
 
 
-def _get_seq2seq_config() -> dict:
+def _get_seq2seq_config() -> Dict[str, Any]:
     """Get sequence-to-sequence configuration."""
     with st.expander(
         "Configure Sequence-to-Sequence Parameters", expanded=True
@@ -200,26 +200,23 @@ def _show_dataset_preview(data_config: DataConfig) -> None:
     if st.button("Preview Dataset", type="secondary"):
         try:
             pipeline = create_pipeline(data_config)
-            _display_preview_tabs(pipeline)
+            tab1, tab2 = st.tabs(
+                ["Raw Data Preview", "Tokenized Output Preview"]
+            )
+            with tab1:
+                _display_raw_preview(pipeline)
+            with tab2:
+                _display_tokenized_preview(pipeline)
         except Exception as e:
             st.error(f"Error creating preview: {e}")
 
 
-def _display_preview_tabs(pipeline) -> None:
-    """Display preview tabs."""
-    tab1, tab2 = st.tabs(["Raw Data Preview", "Tokenized Output Preview"])
-    with tab1:
-        _display_raw_preview(pipeline)
-    with tab2:
-        _display_tokenized_preview(pipeline)
-
-
-def _display_raw_preview(pipeline) -> None:
+def _display_raw_preview(pipeline: DataPipeline) -> None:
     """Display raw data preview."""
     st.markdown("#### Human-Readable Source Data")
     try:
         with st.spinner("Loading raw preview..."):
-            df = pipeline.get_raw_preview(num_records=PREVIEW_RECORDS)
+            df = pipeline.get_preview()
             st.dataframe(
                 df,
                 use_container_width=True,
@@ -236,23 +233,17 @@ def _display_raw_preview(pipeline) -> None:
         st.error(f"Error loading raw preview: {e}")
 
 
-def _display_tokenized_preview(pipeline) -> None:
+def _display_tokenized_preview(pipeline: DataPipeline) -> None:
     """Display tokenized preview."""
     st.markdown("#### Model Input After Tokenization")
     try:
         with st.spinner("Loading tokenized preview..."):
-            tokenized_examples = pipeline.get_tokenized_preview(
-                num_records=PREVIEW_RECORDS
-            )
-
-            # Show treescope visualization
+            tokenized_examples = pipeline.get_preview(tokenized=True)
             with treescope.active_autovisualizer.set_scoped(
                 treescope.ArrayAutovisualizer()
             ):
                 html = treescope.render_to_html(tokenized_examples)
                 components.html(html, height=250, scrolling=True)
-
-            # Show decoded text
             with st.expander("Tokenizer Decoded Text", expanded=True):
                 if "input" in tokenized_examples:
                     turns = _extract_conversation_turns(
@@ -276,9 +267,11 @@ def _display_tokenized_preview(pipeline) -> None:
         st.error(f"Error loading tokenized preview: {e}")
 
 
-def _extract_conversation_turns(pipeline, tokenized_examples) -> list:
+def _extract_conversation_turns(
+    pipeline: DataPipeline, tokenized_examples: dict
+) -> List[dict]:
     """Extract conversation turns from tokenized examples."""
-    turns = []
+    turns: List[dict] = []
     for i in range(len(tokenized_examples["input"])):
         decoded_text = pipeline.tokenizer.decode(tokenized_examples["input"][i])
 

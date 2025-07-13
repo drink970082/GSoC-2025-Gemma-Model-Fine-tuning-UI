@@ -1,5 +1,5 @@
 import streamlit as st
-
+import pandas as pd
 from services.training_service import TrainingService
 
 
@@ -8,27 +8,28 @@ from services.training_service import TrainingService
 def display_plots_panel(training_service: TrainingService) -> None:
     """Display the core performance plots panel."""
     if st.session_state.abort_training:
-        loss_metrics = st.session_state.frozen_loss_metrics
-        perf_metrics = st.session_state.frozen_perf_metrics
+        training_metrics = st.session_state.frozen_training_metrics
     else:
-        loss_metrics = training_service.get_loss_metrics()
-        perf_metrics = training_service.get_performance_metrics()
-        st.session_state.frozen_loss_metrics = loss_metrics
-        st.session_state.frozen_perf_metrics = perf_metrics
+        training_metrics = training_service.get_training_metrics()
+        st.session_state.frozen_training_metrics = training_metrics
 
-    if not loss_metrics and not perf_metrics:
+    if not training_metrics:
         st.info("Waiting for first metric to be logged...")
         return
 
     # Create loss plots
-    if loss_metrics:
+    loss_metrics = training_metrics.get("losses/loss", pd.DataFrame())
+    perf_metrics = training_metrics.get("perf_stats/loss", pd.DataFrame())
+    
+    if not loss_metrics.empty:
         _create_loss_plots(loss_metrics)
+        
     # Create performance plots
-    if perf_metrics:
+    if not perf_metrics.empty:
         _create_perf_plots(perf_metrics)
 
 
-def _create_loss_plots(loss_metrics: dict) -> None:
+def _create_loss_plots(loss_metrics: pd.DataFrame) -> None:
     """Create the loss plots."""
     st.markdown("### Training Loss")
     loss_cols = st.columns(2)
@@ -45,7 +46,7 @@ def _create_loss_plots(loss_metrics: dict) -> None:
                 st.metric("Value", f"{metric_df.iloc[0]['value']:.4f}")
 
 
-def _create_perf_plots(perf_metrics: dict) -> None:
+def _create_perf_plots(perf_metrics: pd.DataFrame) -> None:
     """Create the performance plots."""
     st.markdown("### Performance Metrics")
     perf_cols = st.columns(3)

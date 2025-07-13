@@ -1,28 +1,22 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Optional
 import os
 
 
 class BaseManager(ABC):
     """Base class for all managers with standard lifecycle."""
 
-    def __init__(self, config: Any = None):
-        self.config = config
-        self.work_dir = None
+    def __init__(self, config: Any = None) -> None:
+        """Initialize the BaseManager."""
+        self.config: Any = config
+        self.work_dir: Optional[str] = None
 
     @abstractmethod
     def cleanup(self) -> None:
         """Clean up resources."""
         pass
 
-    def health_check(self) -> Dict[str, Any]:
-        """Return basic health info."""
-        return {
-            "initialized": self._initialized,
-            "manager": self.__class__.__name__,
-        }
-
-    def set_work_dir(self, work_dir: str | None) -> None:
+    def set_work_dir(self, work_dir: Optional[str]) -> None:
         """set the work directory."""
         # We must create the work_dir if it doesn't exist
         if work_dir:

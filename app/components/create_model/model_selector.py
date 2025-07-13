@@ -1,5 +1,5 @@
 import streamlit as st
-from typing import Union
+from typing import Union, Tuple
 from config.model_info import MODEL_INFO
 from config.fine_tuning_info import FINE_TUNING_METHODS
 from config.dataclass import ModelConfig, LoraParams, DpoParams
@@ -88,7 +88,7 @@ def _create_method_parameters(
     return None
 
 
-def _get_training_parameters() -> tuple[int, float]:
+def _get_training_parameters() -> Tuple[int, float]:
     """Get training parameters from user input."""
     st.markdown("#### Training Parameters")
     col1, col2 = st.columns(2)

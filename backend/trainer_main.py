@@ -35,22 +35,22 @@ def parse_config(config: dict) -> TrainingConfig:
     )
 
 
-# This print statement will be the very first thing to run.
-print("trainer_main.py: Script execution started.")
-
-
-def main():
+def main() -> None:
     """Main entry point for the training script."""
-    print("trainer_main.py: main() function entered.")
-    parser = create_parser()
-    args = parser.parse_args()
-    print("trainer_main.py: Arguments parsed successfully.")
+    print("trainer_main.py: Script execution started.")
 
     try:
+        parser = create_parser()
+        args = parser.parse_args()
+        print("trainer_main.py: Arguments parsed successfully.")
+
         training_config = parse_config(args.config)
         work_dir = args.work_dir
         trainer = ModelTrainer(training_config, work_dir)
         trainer.train()
+    except ValueError as e:
+        print(f"trainer_main.py: Configuration error: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(
             f"trainer_main.py: An unhandled exception occurred: {e}",

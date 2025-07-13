@@ -1,4 +1,14 @@
 import os
+from enum import Enum
+
+
+class TrainingStatus(Enum):
+    """Training status enum."""
+    IDLE = "IDLE"
+    RUNNING = "RUNNING"
+    FINISHED = "FINISHED"
+    FAILED = "FAILED"
+    ORPHANED = "ORPHANED"
 
 class AppConfig:
     _instance = None
@@ -8,32 +18,10 @@ class AppConfig:
             cls._instance = super(AppConfig, cls).__new__(cls)
         return cls._instance
 
-    # --- default values ---
-    # Default configurations
-    DEFAULT_DATA_CONFIG = {
-        "source": "tensorflow",
-        "dataset_name": "mtnt",
-        "split": "train",
-        "shuffle": True,
-        "seq2seq_in_prompt": "src",
-        "seq2seq_max_length": 200,
-        "seq2seq_in_response": "dst",
-        "seq2seq_truncate": True,
-    }
-
-    DEFAULT_MODEL_CONFIG = {
-        "model_variant": "Gemma3_1B",
-        "epochs": 1,
-        "batch_size": 4,
-        "learning_rate": 1e-3,
-    }
 
     # --- Training process constants ---
     TRAINING_STATE_FILE = ".training_state.json"
-    STATUS_LOG = "status.log"
     CHECKPOINT_FOLDER = os.path.abspath("./checkpoints/")
-    TENSORBOARD_LOGDIR = "checkpoints/"
-    TENSORBOARD_PORT = 6007
     TRAINER_STDOUT_LOG = "trainer_stdout.log"
     TRAINER_STDERR_LOG = "trainer_stderr.log"
     TRAINER_MAIN_PATH = "backend/trainer_main.py"
@@ -51,7 +39,5 @@ class AppConfig:
 
 
 def get_config():
-    """
-    Returns a singleton instance of the AppConfig.
-    """
+    """Returns a singleton instance of the AppConfig."""
     return AppConfig()

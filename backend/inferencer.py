@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple, List
 
 from gemma import gm
 
@@ -20,18 +20,15 @@ MODEL_CONFIG_FILE = "model_config.json"
 class Inferencer:
     """Service for running inference with trained models."""
 
-    def __init__(
-        self,
-        work_dir: Optional[str] = None,
-    ):
-        self.model = None
-        self.params = None
-        self.tokenizer = None
-        self.sampler = None
-        self._loaded = False
-        self.work_dir = work_dir or config.CHECKPOINT_FOLDER
+    def __init__(self, work_dir: Optional[str] = None) -> None:
+        self.model: Optional[Any] = None
+        self.params: Optional[Any] = None
+        self.tokenizer: Optional[gm.text.Gemma3Tokenizer] = None
+        self.sampler: Optional[gm.text.ChatSampler] = None
+        self._loaded: bool = False
+        self.work_dir: str = work_dir or config.CHECKPOINT_FOLDER
 
-    def list_checkpoints(self) -> list[str]:
+    def list_checkpoints(self) -> List[str]:
         """Return a list of checkpoint directory names, sorted by creation time (newest first)."""
         if not os.path.exists(self.work_dir):
             return []
@@ -53,38 +50,6 @@ class Inferencer:
             return True
         return False
 
-    def get_checkpoint_path(self, work_dir: str) -> str:
-        """Get the path to the checkpoint subdirectory."""
-        checkpoint_path = os.path.join(work_dir, CHECKPOINT_SUBDIR)
-        subdirs = [p for p in Path(checkpoint_path).iterdir() if p.is_dir()]
-        return subdirs[0]
-
-    def _parse_model_config(self, model_config_dict: dict) -> ModelConfig:
-        """Parse model configuration from dictionary."""
-        parameters = None
-        if model_config_dict.get("parameters"):
-            method = model_config_dict["method"]
-            if method == "LoRA":
-                parameters = LoraParams(**model_config_dict["parameters"])
-            elif method == "DPO":
-                parameters = DpoParams(**model_config_dict["parameters"])
-
-        return ModelConfig(
-            model_variant=model_config_dict["model_variant"],
-            epochs=model_config_dict["epochs"],
-            learning_rate=model_config_dict["learning_rate"],
-            method=model_config_dict["method"],
-            parameters=parameters,
-        )
-
-    def _create_model_from_config(self, model_config: ModelConfig):
-        """Create model instance based on configuration."""
-        if model_config.method == "LoRA":
-            return Model.create_lora_model(
-                model_config.model_variant, model_config.parameters.lora_rank
-            )
-        else:
-            return Model.create_standard_model(model_config.model_variant)
 
     def load_model(self, checkpoint_path: Optional[str] = None) -> bool:
         """Load the most recent trained model if available."""
@@ -103,7 +68,7 @@ class Inferencer:
         try:
             # Load trained parameters
             self.params = Model.load_trained_params(
-                self.get_checkpoint_path(full_checkpoint_path)
+                self._get_checkpoint_path(full_checkpoint_path)
             )
 
             # Load model configuration
@@ -125,6 +90,7 @@ class Inferencer:
 
         except Exception as e:
             print(f"Error loading model: {str(e)}")
+            self.clear_model()
             return False
 
     def is_loaded(self) -> bool:
@@ -151,7 +117,7 @@ class Inferencer:
         if not self._loaded or not self.tokenizer:
             return 0
         return len(self.tokenizer.encode(text))
-    
+
     def clear_model(self) -> None:
         """Clear all model-related attributes."""
         self.model = None
@@ -159,3 +125,36 @@ class Inferencer:
         self.tokenizer = None
         self.sampler = None
         self._loaded = False
+        
+    def _get_checkpoint_path(self, work_dir: str) -> str:
+        """Get the path to the checkpoint subdirectory."""
+        checkpoint_path = os.path.join(work_dir, CHECKPOINT_SUBDIR)
+        subdirs = [p for p in Path(checkpoint_path).iterdir() if p.is_dir()]
+        return subdirs[0]
+
+    def _parse_model_config(self, model_config_dict: dict) -> ModelConfig:
+        """Parse model configuration from dictionary."""
+        parameters = None
+        if model_config_dict.get("parameters"):
+            method = model_config_dict["method"]
+            if method == "LoRA":
+                parameters = LoraParams(**model_config_dict["parameters"])
+            elif method == "DPO":
+                parameters = DpoParams(**model_config_dict["parameters"])
+
+        return ModelConfig(
+            model_variant=model_config_dict["model_variant"],
+            epochs=model_config_dict["epochs"],
+            learning_rate=model_config_dict["learning_rate"],
+            method=model_config_dict["method"],
+            parameters=parameters,
+        )
+
+    def _create_model_from_config(self, model_config: ModelConfig) -> Any:
+        """Create model instance based on configuration."""
+        if model_config.method == "LoRA":
+            return Model.create_lora_model(
+                model_config.model_variant, model_config.parameters.lora_rank
+            )
+        else:
+            return Model.create_standard_model(model_config.model_variant)

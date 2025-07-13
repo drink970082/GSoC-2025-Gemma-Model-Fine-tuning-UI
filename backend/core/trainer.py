@@ -1,36 +1,32 @@
 import os
 import sys
-import time
 import traceback
 from typing import Any, Optional, Tuple
 
-import optax
-from data_pipeline import create_pipeline
-from kauldron import kd
-
 from config.dataclass import TrainingConfig
 from config.app_config import get_config
+from backend.data_pipeline import create_pipeline, DataPipeline
 from backend.core.fine_tuner import FINE_TUNE_STRATEGIES
 
 config = get_config()
 
+XLA_MEM_FRACTION = "1.00"
 
 class ModelTrainer:
     """Main class for handling the model training process."""
 
-    def __init__(self, training_config: TrainingConfig, work_dir: str):
-        self.training_config = training_config
-        self.pipeline = None
-        self.trainer = None
-        self.workdir = work_dir
+    def __init__(self, training_config: TrainingConfig, work_dir: str) -> None:
+        """Initialize the ModelTrainer."""
+        self.training_config: TrainingConfig = training_config
+        self.workdir: str = work_dir
 
     def setup_environment(self) -> None:
-        os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "1.00"
+        """Set up the environment for the training process."""
+        os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = XLA_MEM_FRACTION
 
 
     def train(self) -> Tuple[Any, Any]:
         """Execute the training process."""
-        state, aux = None, None
         try:
             self.setup_environment()
             pipeline = create_pipeline(self.training_config.data_config)
@@ -38,11 +34,9 @@ class ModelTrainer:
             trainer = FINE_TUNE_STRATEGIES[
                 self.training_config.model_config.method
             ].create_trainer(self.training_config, train_ds, self.workdir)
-            state, aux = trainer.train()
-            return state, aux
+            return trainer.train()
 
-        except Exception:
+        except Exception as e:
             error_traceback_str = traceback.format_exc()
             print(error_traceback_str, file=sys.stderr)
-            error_summary = error_traceback_str.strip().split("\n")[-1]
-            raise error_summary
+            raise e
