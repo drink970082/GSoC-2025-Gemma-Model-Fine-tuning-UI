@@ -17,15 +17,20 @@ def display_plots_panel(training_service: TrainingService) -> None:
         st.info("Waiting for first metric to be logged...")
         return
 
+    loss_metrics = {}
+    perf_metrics = {}
     # Create loss plots
-    loss_metrics = training_metrics.get("losses/loss", pd.DataFrame())
-    perf_metrics = training_metrics.get("perf_stats/loss", pd.DataFrame())
+    for key, value in training_metrics.items():
+        if key.startswith("losses/"):
+            loss_metrics[key] = value
+        elif key.startswith("perf_stats/"):
+            perf_metrics[key] = value
     
-    if not loss_metrics.empty:
+    if loss_metrics:
         _create_loss_plots(loss_metrics)
         
     # Create performance plots
-    if not perf_metrics.empty:
+    if perf_metrics:
         _create_perf_plots(perf_metrics)
 
 

@@ -9,7 +9,7 @@ def display_logs_panel(training_service: TrainingService) -> None:
     if st.session_state.abort_training:
         _display_frozen_logs()
         return
-
+    
     _display_live_logs(training_service)
 
 
@@ -44,4 +44,4 @@ def _count_errors(stderr: str) -> int:
         return 0
 
     stderr_lower = stderr.lower()
-    return sum(stderr_lower.count("error"))
+    return stderr_lower.count("error")

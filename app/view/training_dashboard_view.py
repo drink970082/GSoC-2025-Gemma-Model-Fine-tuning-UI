@@ -18,7 +18,6 @@ def poll_training_status(training_service: TrainingService) -> None:
     If so, it triggers a rerun to update the control panel to its terminal state.
     """
     status = training_service.is_training_running()
-
     if st.session_state.abort_training:
         return
 
@@ -27,7 +26,6 @@ def poll_training_status(training_service: TrainingService) -> None:
     ) and st.session_state.session_started_by_app:
         st.session_state.session_started_by_app = False
         st.rerun()
-
     if status == "RUNNING":
         st.info(f"Training in progress.")
 

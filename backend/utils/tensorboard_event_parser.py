@@ -22,15 +22,20 @@ class EventFileParser:
         """Initialize the event file parser."""
         self.log_dir = log_dir
 
+    def set_work_dir(self, work_dir: str) -> None:
+        """Set the work directory for the event file parser."""
+        self.log_dir = work_dir
+
     def load_event_data(
         self,
-    ) -> tuple[Dict[str, Any], Dict[str, pd.DataFrame], Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """Load and parse event data from TensorBoard logs."""
-        data = {}
+        res = {}
+        tb_eventdata = {}
         try:
             latest_event_file = self._find_event_file()
             if not latest_event_file:
-                return data
+                return res
             event_acc = EventAccumulator(
                 latest_event_file,
                 size_guidance={"scalars": 0, "tensors": 0},
@@ -40,30 +45,27 @@ class EventFileParser:
             for tag in tags.get("tensors", []):
                 try:
                     events = event_acc.Tensors(tag)
-                    data[tag] = self._process_tensor_events(tag, events)
+                    tb_eventdata[tag] = self._process_tensor_events(tag, events)
                 except Exception:
-                    continue
-        except Exception:
-            return data
-        metadata = {
+                    raise
+        except Exception as e:
+            raise e
+        res["metadata"] = {
             k: v.iloc[0]["value"] if not v.empty else None
-            for k, v in data.items()
+            for k, v in tb_eventdata.items()
             if k in ["num_params", "parameters", "element_spec", "context_spec"]
         }
-        training_metrics = {
+        res["training_metrics"] = {
             k: v
-            for k, v in data.items()
+            for k, v in tb_eventdata.items()
             if k.startswith(("losses/", "perf_stats/"))
         }
-        latest_training_metrics = {
+        res["latest_training_metrics"] = {
             k: v.iloc[-1]["value"] if not v.empty else None
-            for k, v in training_metrics.items()
+            for k, v in res["training_metrics"].items()
         }
-        return (
-            self._get_parsed_metadata(metadata),
-            training_metrics,
-            latest_training_metrics,
-        )
+        res["metadata"] = self._get_parsed_metadata(res["metadata"])
+        return res
 
     def _find_event_file(self) -> Optional[str]:
         """Find the event file in the log directory."""
@@ -125,7 +127,7 @@ class EventFileParser:
             )
         return pd.DataFrame()
 
-    def _process_training_metric(self, events: List[Any]) -> pd.DataFrame:
+    def _process_training_metric(self, tag: str, events: List[Any]) -> pd.DataFrame:
         """Process training metrics (time series)."""
         parsed_events = []
         for e in events:
@@ -137,7 +139,7 @@ class EventFileParser:
             columns=["wall_time", "step", "value"],
         )
 
-    def _process_other_tensor(self, events: List[Any]) -> pd.DataFrame:
+    def _process_other_tensor(self, tag: str, events: List[Any]) -> pd.DataFrame:
         """Process other tensor types."""
         return pd.DataFrame(
             [
@@ -318,7 +320,3 @@ class EventFileParser:
                     result["total_specs"] += 1
 
         return result
-
-    def set_work_dir(self, work_dir: str) -> None:
-        """Set the work directory for the event file parser."""
-        self.log_dir = work_dir

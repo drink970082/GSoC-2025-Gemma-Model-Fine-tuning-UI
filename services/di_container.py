@@ -24,8 +24,7 @@ class DIContainer:
             raise KeyError(f"Service '{name}' not registered")
 
         return self._services[name]
-    
-    
+
     def _register(self, name: str, service: Any) -> None:
         """Register a service with the given name."""
         self._services[name] = service
@@ -40,20 +39,19 @@ class DIContainer:
         tensorboard_manager = TensorBoardManager()
         system_manager = SystemManager()
 
-        self.register("process_manager", process_manager)
-        self.register("training_state_manager", training_state_manager)
-        self.register("tensorboard_manager", tensorboard_manager)
-        self.register("system_manager", system_manager)
+        self._register("process_manager", process_manager)
+        self._register("training_state_manager", training_state_manager)
+        self._register("tensorboard_manager", tensorboard_manager)
+        self._register("system_manager", system_manager)
 
         from .training_service import TrainingService
 
         training_service = TrainingService(
             process_manager=process_manager,
             tensorboard_manager=tensorboard_manager,
-            training_state_manager=training_state_manager,
             system_manager=system_manager,
         )
-        self.register("training_service", training_service)
+        self._register("training_service", training_service)
         atexit.register(self._cleanup_all)
         self._setup_done = True
 
@@ -70,6 +68,7 @@ class DIContainer:
 
 # Module-level container instance
 _container = DIContainer()
+
 
 def get_service(name: str) -> Any:
     """Convenience function to get a service from the global container."""

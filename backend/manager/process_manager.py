@@ -36,7 +36,7 @@ class ProcessManager(BaseManager):
 
     def cleanup(self) -> None:
         """Cleanup method called by atexit."""
-        self.terminate_process(mode="graceful", delete_checkpoint=False)
+        self.terminate_process(mode="force", delete_checkpoint=True)
         self.training_state_manager.mark_idle()
 
     def update_config(self, training_config: TrainingConfig) -> None:
@@ -184,9 +184,9 @@ class ProcessManager(BaseManager):
         state = self.training_state_manager.get_state()
         status = state.get("status", TrainingStatus.IDLE.value)
         if status == TrainingStatus.RUNNING.value:
-            pid = state.get("pid")
-            if pid and not self._is_process_running(pid):
-                return self._handle_dead_process()
+            if self.training_process:
+                if self.training_process.poll() is not None:
+                    return self._handle_dead_process()
         return status
 
     def reset_state(self, delete_checkpoint: bool = False) -> None:
@@ -197,6 +197,8 @@ class ProcessManager(BaseManager):
         self.training_process = None
         self.app_config = None
         self.work_dir = None
+        self.training_state_manager.cleanup()
+        self.training_state_manager.mark_idle()
 
     def set_work_dir(self, work_dir: Optional[str]) -> None:
         """Set the work directory and derive file paths."""
@@ -263,6 +265,7 @@ class ProcessManager(BaseManager):
                 self.training_state_manager.mark_finished(
                     time.strftime("%Y-%m-%dT%H:%M:%S")
                 )
+                
                 return TrainingStatus.FINISHED.value
             else:
                 error_msg = (

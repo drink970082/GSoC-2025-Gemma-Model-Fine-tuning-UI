@@ -8,7 +8,6 @@ import pandas as pd
 from backend.manager.process_manager import ProcessManager
 from backend.manager.system_manager import SystemManager
 from backend.manager.tensorboard_manager import TensorBoardManager
-from backend.manager.training_state_manager import TrainingStateManager
 from config.app_config import get_config
 from config.dataclass import TrainingConfig
 
@@ -23,20 +22,17 @@ class TrainingService:
         process_manager: ProcessManager,
         tensorboard_manager: TensorBoardManager,
         system_manager: SystemManager,
-        training_state_manager: TrainingStateManager,
     ):
         """Initialize the training service with DI container."""
         self.process_manager = process_manager
         self.tensorboard_manager = tensorboard_manager
         self.system_manager = system_manager
-        self.training_state_manager = training_state_manager
         self.training_config = None
         self.work_dir = None
 
     def start_training(self, training_config: TrainingConfig) -> None:
         """Starts the training process."""
-        state = self.training_state_manager.get_state()
-        if state.get("status") == "RUNNING":
+        if self.process_manager.get_status() == "RUNNING":
             st.warning("Training is already in progress.")
             return
 
@@ -48,8 +44,7 @@ class TrainingService:
     def wait_for_state_file(self, timeout: int = 10) -> bool:
         """Wait for the state file to be created."""
         for _ in range(timeout):
-            state = self.training_state_manager.get_state()
-            if state.get("status") == "RUNNING":
+            if self.process_manager.get_status() == "RUNNING":
                 return True
             time.sleep(1)
         st.error("Training process did not start within timeout.")
@@ -71,9 +66,7 @@ class TrainingService:
 
     def is_training_running(self) -> str:
         """Checks training status."""
-        state = self.training_state_manager.get_state()
-        status = state.get("status", "IDLE")
-
+        status = self.process_manager.get_status()
         # Handle orphaned processes
         if status == "ORPHANED":
             st.warning(

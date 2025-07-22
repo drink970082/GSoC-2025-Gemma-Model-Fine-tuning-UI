@@ -10,9 +10,7 @@ def display_system_usage_panel(training_service: TrainingService) -> None:
     """Display the system resource usage panel."""
     if not training_service.has_gpu():
         st.warning("NVIDIA GPU not detected. GPU monitoring is disabled.")
-
     system_history = training_service.get_system_usage_history()
-    
     # Check if we have enough data
     cpu_history = system_history.get("CPU Utilization (%)", pd.DataFrame())
     if len(cpu_history) < MIN_DATA_POINTS:

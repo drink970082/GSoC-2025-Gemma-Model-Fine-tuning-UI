@@ -26,7 +26,7 @@ class DataPipeline:
         try:
             ds = self._get_pipeline(tokenized=tokenized, preview=True)
             if tokenized:
-                return pd.DataFrame(ds[0])
+                return ds[0]
             else:
                 return self._get_prompt_and_response_df(
                     ds[0],

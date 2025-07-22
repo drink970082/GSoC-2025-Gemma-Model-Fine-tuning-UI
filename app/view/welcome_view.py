@@ -8,7 +8,7 @@ def show_welcome_modal(training_service: TrainingService) -> None:
     
     with center_col:
         with st.container(border=True):
-            st.header("Gemma Fine-Tuning", divider="blue")
+            st.header("Gemma Fine-Tuning", divider="gray")
             
             if training_service.is_training_running() == "RUNNING":
                 _show_running_training_interface()

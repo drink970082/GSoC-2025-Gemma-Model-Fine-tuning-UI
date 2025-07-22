@@ -23,7 +23,7 @@ def _generate_and_display_response(prompt: str) -> None:
         st.error("No model loaded. Please load a checkpoint first.")
         return
     
-    with st.spinner("Generating response..."):
+    with st.spinner("Generating response...", show_time=True):
         try:
             response = st.session_state.inferencer.generate(prompt)
             st.subheader("Response")

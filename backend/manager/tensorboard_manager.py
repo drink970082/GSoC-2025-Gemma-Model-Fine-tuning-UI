@@ -25,9 +25,12 @@ class TensorBoardManager(BaseManager):
 
     def get_kpi_data(self, total_steps: int) -> Dict[str, Any]:
         """Get KPI data."""
-        metadata, training_metrics, latest_training_metrics = (
-            self.event_file_parser.load_event_data()
-        )
+        data = self.event_file_parser.load_event_data()
+        if not data:
+            return {}
+        metadata = data['metadata']
+        training_metrics = data['training_metrics']
+        latest_training_metrics = data['latest_training_metrics']
         training_speed = latest_training_metrics.get(
             "perf_stats/steps_per_sec", 0.0
         )
@@ -39,9 +42,9 @@ class TensorBoardManager(BaseManager):
         eta_str = self._get_eta_str(total_steps, training_speed, current_step)
         return {
             # Metadata
-            **self.event_file_parser.get_parsed_metadata(metadata).get(
-                "parameters", {}
-            ),
+            "total_params": metadata.get("parameters", {}).get("total_params", 0),
+            "total_bytes": metadata.get("parameters", {}).get("total_bytes", 0),
+            "total_layers": len(metadata.get("parameters", {}).get("layers", [])),
             # Progress KPIs
             "current_step": current_step,
             "total_steps": total_steps,
@@ -65,8 +68,8 @@ class TensorBoardManager(BaseManager):
 
     def get_training_metrics(self) -> Dict[str, pd.DataFrame]:
         """Get the training metrics from the TensorBoard manager."""
-        _, training_metrics, _ = self.event_file_parser.load_event_data()
-        return training_metrics
+        data = self.event_file_parser.load_event_data()
+        return data.get('training_metrics', {})
 
     def _get_eta_str(
         self, total_steps: int, training_speed: float, current_step: int

@@ -36,19 +36,9 @@ class SystemManager(BaseManager):
             except pynvml.NVMLError:
                 pass
 
-    def poll_system_usage(self) -> None:
-        """Polls CPU and GPU usage and updates the history deques."""
-        self.history["cpu_util"].append(psutil.cpu_percent())
-        if not self._is_nvml_initialized:
-            self._append_default_gpu_values()
-            return
-        try:
-            self._poll_gpu_usage()
-        except pynvml.NVMLError:
-            self._append_default_gpu_values()
-
     def get_history_as_dataframes(self) -> Dict[str, pd.DataFrame]:
         """Returns the history as a dictionary of Pandas DataFrames for charting."""
+        self._poll_system_usage()
         return {
             "CPU Utilization (%)": pd.DataFrame(list(self.history["cpu_util"])),
             "GPU Utilization (%)": pd.DataFrame(list(self.history["gpu_util"])),
@@ -61,6 +51,19 @@ class SystemManager(BaseManager):
     def has_gpu(self) -> bool:
         """Returns True if NVML was initialized successfully."""
         return self._is_nvml_initialized
+
+
+    def _poll_system_usage(self) -> None:
+        """Polls CPU and GPU usage and updates the history deques."""
+        self.history["cpu_util"].append(psutil.cpu_percent())
+        if not self._is_nvml_initialized:
+            self._append_default_gpu_values()
+            return
+        try:
+            self._poll_gpu_usage()
+        except pynvml.NVMLError:
+            self._append_default_gpu_values()
+
 
     def _append_default_gpu_values(self) -> None:
         """Append default values when GPU monitoring is unavailable."""

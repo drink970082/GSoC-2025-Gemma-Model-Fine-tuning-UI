@@ -12,12 +12,10 @@ def display_kpi_panel(training_service: TrainingService) -> None:
         kpi_data = training_service.get_kpi_data()
         st.session_state.frozen_kpi_data = kpi_data
 
-    has_metadata = kpi_data.get("total_params") or kpi_data.get(
-        "total_memory_mb"
-    )
+    has_metadata = kpi_data.get("total_params")
     is_training = kpi_data.get("current_step", 0) > 0
 
-    if not has_metadata or not is_training:
+    if not has_metadata and not is_training:
         st.info("Waiting for training data...")
         return
 
@@ -51,7 +49,7 @@ def _create_metadata_panel(kpi_data: dict) -> None:
         round(kpi_data.get("total_bytes", 0) / 1024**3, 4),
     )
     metadata_cols[2].metric(
-        "Transformer Layers", len(kpi_data.get("layers", []))
+        "Transformer Layers", kpi_data.get("total_layers", 0)
     )
 
 

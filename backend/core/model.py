@@ -21,4 +21,5 @@ class Model:
     @staticmethod
     def load_trained_params(checkpoint_path: str) -> Any:
         """Load trained parameters from a specific checkpoint path."""
+        print(checkpoint_path)
         return gm.ckpts.load_params(checkpoint_path)

@@ -13,7 +13,7 @@ class DpoParams:
 
 @dataclass
 class DataConfig:
-    source: str
+    source: Literal["tensorflow", "huggingface", "json"]
     dataset_name: str
     split: str
     shuffle: bool
