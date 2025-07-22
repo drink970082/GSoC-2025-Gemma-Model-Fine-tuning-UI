@@ -1,8 +1,5 @@
-import os
-import time
-
 import streamlit as st
-
+from typing import Optional
 from app.components.create_model.config_summary import (
     show_configuration_preview,
 )
@@ -16,69 +13,61 @@ from app.components.create_model.model_selector import (
 from app.components.create_model.start_training_button import (
     show_start_training_section,
 )
-from app.components.create_model.tuning_method_selector import (
-    show_fine_tuning_method_section,
-)
-from backend.manager.global_manager import (
-    get_process_manager,
-    get_tensorboard_manager,
-)
-from config.app_config import get_config
-
-config = get_config()
+from services.training_service import TrainingService
+from config.dataclass import TrainingConfig, DataConfig, ModelConfig
 
 
-def show_create_model_view():
-    """Display the create model interface."""
-    # Initialize configuration dictionary
-    create_model_config = {}
-
-    # Get all configuration values
-    st.subheader("1. Model Name")
-    create_model_config["model_name"] = show_model_name_section()
-    st.divider()
-    st.subheader("2. Fine-tuning Method")
-    create_model_config["method"], create_model_config["method_params"] = (
-        show_fine_tuning_method_section()
-    )
-    st.divider()
-    st.subheader("3. Data Source")
-    create_model_config["data_source"], create_model_config["data_config"] = (
-        show_data_source_section()
-    )
-    st.divider()
-    st.subheader("4. Model Selection")
-    create_model_config["model_config"] = show_model_selection_section()
-    st.divider()
-    st.subheader("5. Configuration Preview")
-    show_configuration_preview(create_model_config)
-    st.divider()
-    st.subheader("6. Start Training")
-    if show_start_training_section(create_model_config):
-        # Start the training process
-        process_manager = get_process_manager()
-        tensorboard_manager = get_tensorboard_manager()
-        tensorboard_manager.reset_training_time()
-        process_manager.update_config(
-            config["data_config"], config["model_config"]
+def _get_config(
+    model_name: str,
+    data_config: DataConfig,
+    model_config: ModelConfig,
+) -> Optional[TrainingConfig]:
+    """Create a training configuration from the model name, data config, and model config."""
+    if model_name and data_config and model_config:
+        return TrainingConfig(
+            model_name=model_name,
+            data_config=data_config,
+            model_config=model_config,
         )
-        process_manager.start_training()
+    return None
 
-        # Set states to switch to the training dashboard
-        st.session_state.session_started_by_app = True
-        st.session_state.model_config = create_model_config["model_config"]
-        with st.spinner("Waiting for training process to initialize..."):
-            start_time = time.time()
-            while (
-                not os.path.exists(config.LOCK_FILE)
-                and time.time() - start_time < 10
-            ):
-                time.sleep(0.5)
+def _reset_session_state() -> None:
+    """Reset the session state to its initial values."""
+    st.session_state.abort_training = False
+    st.session_state.session_started_by_app = True
+    st.session_state.frozen_kpi_data = {}
+    st.session_state.frozen_log = "No logs available."
+    st.session_state.frozen_loss_metrics = {}
+    st.session_state.frozen_perf_metrics = {}
 
-        st.session_state.view = "training_dashboard"
+def _handle_training_start(training_service: TrainingService, training_config: TrainingConfig) -> None:
+    """Handle training start process."""
+    with st.spinner("Waiting for training process to initialize...", show_time=True):
+        training_service.start_training(training_config)
+        _reset_session_state()
+        
+        if training_service.wait_for_state_file():
+            st.session_state.view = "training_dashboard"
+            st.rerun()
+        else:
+            st.error("Training failed to start. Please try again.")
 
-        st.rerun()
-
-
-if __name__ == "__main__":
-    show_create_model_view()
+def show_create_model_view(training_service: TrainingService) -> None:
+    """Display the create model interface."""
+    st.title("Create Model")
+    st.subheader("1. Model Name")
+    model_name = show_model_name_section()
+    st.divider()
+    st.subheader("2. Data Source")
+    data_config = show_data_source_section()
+    st.divider()
+    st.subheader("3. Model Selection")
+    model_config = show_model_selection_section()
+    st.divider()
+    training_config = _get_config(model_name, data_config, model_config)
+    st.subheader("4. Configuration Preview")
+    show_configuration_preview(training_config)
+    st.divider()
+    st.subheader("5. Start Training")
+    if show_start_training_section(training_config):
+        _handle_training_start(training_service, training_config)

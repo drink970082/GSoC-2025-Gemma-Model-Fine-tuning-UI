@@ -1,8 +1,8 @@
 from kauldron import kd
 
 
-class LossFactory:
-    """Factory for creating loss functions."""
+class Loss:
+    """Class for creating loss functions."""
 
     @staticmethod
     def create_loss() -> kd.losses.SoftmaxCrossEntropyWithIntLabels:
