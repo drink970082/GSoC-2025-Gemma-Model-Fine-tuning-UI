@@ -56,3 +56,9 @@ tensorboard_logs/
 # cursor
 .cursor/
 .cursorrules
+
+# xla
+xla/
+
+# training state file
+.training_state.json

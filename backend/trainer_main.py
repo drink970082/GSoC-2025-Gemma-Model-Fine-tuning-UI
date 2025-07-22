@@ -6,7 +6,6 @@ from config.dataclass import (
     TrainingConfig,
     ModelConfig,
     DataConfig,
-    MethodConfig,
     LoraParams,
     DpoParams,
 )
@@ -15,40 +14,43 @@ from config.dataclass import (
 def parse_config(config: dict) -> TrainingConfig:
     # Handle the parameters field
     parameters = None
-    method_config_dict = config["method_config"]
-    if method_config_dict.get("parameters"):
-        if method_config_dict["name"] == "LoRA":
-            parameters = LoraParams(**method_config_dict["parameters"])
-        elif method_config_dict["name"] == "DPO":
-            parameters = DpoParams(**method_config_dict["parameters"])
-    method_config = MethodConfig(
-        name=method_config_dict["name"], parameters=parameters
+    model_config_dict = config["model_config"]
+    if model_config_dict.get("parameters"):
+        if model_config_dict["method"] == "LoRA":
+            parameters = LoraParams(**model_config_dict["parameters"])
+        elif model_config_dict["method"] == "DPO":
+            parameters = DpoParams(**model_config_dict["parameters"])
+    model_config = ModelConfig(
+        model_variant=model_config_dict["model_variant"],
+        epochs=model_config_dict["epochs"],
+        learning_rate=model_config_dict["learning_rate"],
+        method=model_config_dict["method"],
+        parameters=parameters,
     )
     # Standard method has parameters=None, which is already set
     return TrainingConfig(
         model_name=config["model_name"],
-        model_config=ModelConfig(**config["model_config"]),
+        model_config=model_config,
         data_config=DataConfig(**config["data_config"]),
-        method_config=method_config,
     )
 
 
-# This print statement will be the very first thing to run.
-print("trainer_main.py: Script execution started.")
-
-
-def main():
+def main() -> None:
     """Main entry point for the training script."""
-    print("trainer_main.py: main() function entered.")
-    parser = create_parser()
-    args = parser.parse_args()
-    print("trainer_main.py: Arguments parsed successfully.")
+    print("trainer_main.py: Script execution started.")
 
     try:
+        parser = create_parser()
+        args = parser.parse_args()
+        print("trainer_main.py: Arguments parsed successfully.")
+
         training_config = parse_config(args.config)
         work_dir = args.work_dir
         trainer = ModelTrainer(training_config, work_dir)
         trainer.train()
+    except ValueError as e:
+        print(f"trainer_main.py: Configuration error: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(
             f"trainer_main.py: An unhandled exception occurred: {e}",

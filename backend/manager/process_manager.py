@@ -1,81 +1,66 @@
+import json
 import os
+import shutil
 import signal
 import subprocess
 import time
-from typing import Literal, Optional
 from dataclasses import asdict
-import json
+from typing import Literal, Optional, Tuple, Any, TextIO
 import streamlit as st
 
 from backend.manager.base_manager import BaseManager
-from config.app_config import TrainingStatus, get_config
-from config.dataclass import TrainingConfig
+from backend.manager.training_state_manager import TrainingStateManager
+from config.app_config import get_config, TrainingStatus
+from config.dataclass import ModelConfig, TrainingConfig
 
 config = get_config()
+
+MODEL_CONFIG_FILE = "model_config.json"
 
 
 class ProcessManager(BaseManager):
     """A class to manage background subprocesses and cleanup operations."""
 
-    def __init__(self):
+    def __init__(self, training_state_manager: TrainingStateManager) -> None:
+        """Initialize the ProcessManager."""
         super().__init__()
         self.training_process: Optional[subprocess.Popen] = None
         self.training_config: Optional[TrainingConfig] = None
-        # Paths for managed files
-        self.lock_file_path = config.LOCK_FILE
-        self.stdout_log_path = None
-        self.stderr_log_path = None
-        # File handles
-        self._log_stdout_handle = None
-        self._log_stderr_handle = None
+        self.stdout_log_path: Optional[str] = None
+        self.stderr_log_path: Optional[str] = None
+        self._log_stdout_handle: Optional[TextIO] = None
+        self._log_stderr_handle: Optional[TextIO] = None
+        self.training_state_manager: TrainingStateManager = (
+            training_state_manager
+        )
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Cleanup method called by atexit."""
-        self.terminate_process(mode="graceful")
+        self.terminate_process(mode="force", delete_checkpoint=True)
+        self.training_state_manager.mark_idle()
 
-    def get_training_model_config(self) -> dict | None:
-        """Retrieves the model config for the current training run."""
-        return (
-            self.training_config.model_config if self.training_config else None
-        )
-
-    def get_training_data_config(self) -> dict | None:
-        """Retrieves the data config for the current training run."""
-        return (
-            self.training_config.data_config if self.training_config else None
-        )
-
-    def update_config(self, training_config):
+    def update_config(self, training_config: TrainingConfig) -> None:
+        """Update the training configuration."""
         self.training_config = training_config
 
-    def start_training(self):
-        """
-        Starts the training process in a subprocess.
-        """
+    def start_training(self) -> None:
+        """Starts the training process in a subprocess."""
         if not self.work_dir:
-            st.error("Work directory is not set.")
-            return
+            raise ValueError("Work directory is not set.")
 
-        if self.is_lock_file_locked():
-            st.warning("Detected a lock file...")
-            pid = self._read_lock_file()
-            if pid and self._is_process_running(pid):
-                st.warning("Training is already in progress.")
-                return
-            else:
-                st.warning(
-                    f"Process with PID {pid} is not running, removing lock file..."
-                )
-                self._remove_lock_file()
+        if (
+            self.training_state_manager.get_state().get("status")
+            == TrainingStatus.RUNNING.value
+        ):
+            st.warning("Training is already in progress.")
+            return
 
         if (
             not self.training_config
             or not self.training_config.data_config
             or not self.training_config.model_config
-            or not self.training_config.method_config
         ):
-            st.error("Data or model configuration is not set.")
-            return
+            raise ValueError("Data or model configuration is not set.")
 
         command = [
             "python",
@@ -91,9 +76,16 @@ class ProcessManager(BaseManager):
             self.training_process = subprocess.Popen(
                 command, stdout=f_out, stderr=f_err
             )
-            self._write_lock_file(self.training_process.pid)
+            start_time = time.strftime("%Y-%m-%dT%H:%M:%S")
+            self.training_state_manager.mark_running(
+                self.training_process.pid, start_time
+            )
+            self._write_model_config(self.training_config.model_config)
         except Exception as e:
             st.error(f"Failed to start the training subprocess: {e}")
+            self.training_state_manager.mark_failed(
+                str(e), time.strftime("%Y-%m-%dT%H:%M:%S")
+            )
             return
 
         time.sleep(2)
@@ -106,14 +98,18 @@ class ProcessManager(BaseManager):
                 st.error(
                     "The training process failed to start with no error message."
                 )
-
-            # Clean up lock file and close logs if process dies immediately
+            self._remove_work_dir()
             self.reset_state()
+            self.training_state_manager.mark_failed(
+                error_output or "Unknown error",
+                time.strftime("%Y-%m-%dT%H:%M:%S"),
+            )
             return
 
     def terminate_process(
         self,
         mode: Literal["graceful", "force"] = "graceful",
+        delete_checkpoint: bool = False,
     ) -> bool:
         """Terminate a process either gracefully or forcefully."""
         terminated = True
@@ -123,26 +119,25 @@ class ProcessManager(BaseManager):
                 try:
                     self.training_process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
-                    return self.terminate_process(mode="force")
+                    return self.terminate_process(
+                        mode="force", delete_checkpoint=delete_checkpoint
+                    )
             else:
                 try:
                     self.training_process.kill()
                     self.training_process.wait(timeout=5)
                 except subprocess.TimeoutExpired:
                     terminated = False
-        self.reset_state()
-        return terminated
-
-    def _is_process_running(self, pid: int) -> bool:
-        """Check if a process with the given PID is running."""
-        if pid is None or pid <= 0:
-            return False
-        try:
-            os.kill(pid, 0)
-        except OSError:
-            return False
+        if terminated:
+            if delete_checkpoint:
+                self._remove_work_dir()
+            self.reset_state()
+            self.training_state_manager.mark_idle()
         else:
-            return True
+            self.training_state_manager.mark_orphaned(
+                "Process termination failed"
+            )
+        return terminated
 
     def force_cleanup(self) -> bool:
         """Stop all managed processes and clean up files."""
@@ -150,73 +145,24 @@ class ProcessManager(BaseManager):
             subprocess.run(
                 ["pkill", "-f", config.TRAINER_MAIN_PATH], check=False
             )
+            self.training_state_manager.mark_idle()
             self.reset_state()
+            return True
         except FileNotFoundError:
             print(
                 "'pkill' command not found. Skipping orphaned process cleanup."
             )
+            self.training_state_manager.mark_idle()
             self.reset_state()
             return True
         except Exception as e:
             print(f"Error stopping processes: {e}")
             return False
 
-    def _write_lock_file(self, pid: int) -> None:
-        """Creates the training lock file."""
-        try:
-            with open(self.lock_file_path, "w") as f:
-                f.write(str(pid))
-        except OSError as e:
-            print(
-                f"Error: Could not create lock file at {self.lock_file_path}: {e}"
-            )
-            raise
-
-    def _read_lock_file(self) -> int | None:
-        """Reads the process ID from the lock file."""
-        try:
-            with open(self.lock_file_path, "r") as f:
-                return int(f.read().strip())
-        except (FileNotFoundError, ValueError):
-            return None
-
-    def _remove_lock_file(self) -> None:
-        """Removes the training lock file if it exists."""
-        if os.path.exists(self.lock_file_path):
-            try:
-                os.remove(self.lock_file_path)
-            except OSError as e:
-                print(
-                    f"Error: Could not remove lock file at {self.lock_file_path}: {e}"
-                )
-
-    def is_lock_file_locked(self) -> bool:
-        """Checks if the training lock file exists."""
-        return os.path.exists(self.lock_file_path)
-
-    def _open_log_files(self) -> tuple:
-        """Opens training log files and returns the file handles."""
-        try:
-            self._log_stdout_handle = open(self.stdout_log_path, "w")
-            self._log_stderr_handle = open(self.stderr_log_path, "w")
-            return self._log_stdout_handle, self._log_stderr_handle
-        except OSError as e:
-            print(f"Error opening log files: {e}")
-            if self._log_stdout_handle:
-                self._log_stdout_handle.close()
-            raise
-
-    def _close_log_files(self) -> None:
-        """Closes any open log file handles."""
-        if self._log_stdout_handle and not self._log_stdout_handle.closed:
-            self._log_stdout_handle.close()
-            self._log_stdout_handle = None
-        if self._log_stderr_handle and not self._log_stderr_handle.closed:
-            self._log_stderr_handle.close()
-            self._log_stderr_handle = None
-
     def read_stdout_log(self) -> str:
         """Reads the content of the standard output log file."""
+        if not self.stdout_log_path:
+            return ""
         try:
             with open(self.stdout_log_path, "r") as f:
                 return f.read()
@@ -225,51 +171,36 @@ class ProcessManager(BaseManager):
 
     def read_stderr_log(self) -> str:
         """Reads the content of the standard error log file."""
+        if not self.stderr_log_path:
+            return ""
         try:
             with open(self.stderr_log_path, "r") as f:
                 return f.read()
         except FileNotFoundError:
             return ""
 
-    def get_status(self) -> TrainingStatus:
-        """
-        Investigates the lock file and OS to give a definitive status.
-        This is the single source of truth for the system's state.
-        """
-        if self.training_process:
-            if self.training_process.poll() is None:
-                # Process is still running
-                return TrainingStatus.RUNNING
-            else:
-                # Process has finished, reap the zombie and return FINISHED
-                self.training_process.wait()
-                return TrainingStatus.FINISHED
+    def get_status(self) -> str:
+        """Investigates the lock file and OS to give a definitive status."""
+        state = self.training_state_manager.get_state()
+        status = state.get("status", TrainingStatus.IDLE.value)
+        if status == TrainingStatus.RUNNING.value:
+            if self.training_process:
+                if self.training_process.poll() is not None:
+                    return self._handle_dead_process()
+        return status
 
-        # If we don't have the process object (e.g., after a restart),
-        # fall back to checking the lock file.
-        if self.is_lock_file_locked():
-            pid = self._read_lock_file()
-            if pid and self._is_process_running(pid):
-                return TrainingStatus.ORPHANED
-            else:
-                # Lock file exists but process is gone. It's a stale run.
-                return TrainingStatus.FINISHED
-
-        # No process object, no lock file. We are idle.
-        return TrainingStatus.IDLE
-
-    def reset_state(self) -> None:
-        """
-        Performs a full cleanup of files and resets the manager's
-        internal state to idle.
-        """
+    def reset_state(self, delete_checkpoint: bool = False) -> None:
+        """Performs a full cleanup of files and resets the manager's internal state to idle."""
         self._close_log_files()
-        self._remove_lock_file()
+        if delete_checkpoint:
+            self._remove_work_dir()
         self.training_process = None
         self.app_config = None
         self.work_dir = None
+        self.training_state_manager.cleanup()
+        self.training_state_manager.mark_idle()
 
-    def set_work_dir(self, work_dir: str) -> None:
+    def set_work_dir(self, work_dir: Optional[str]) -> None:
         """Set the work directory and derive file paths."""
         super().set_work_dir(work_dir)
         if work_dir:
@@ -282,3 +213,69 @@ class ProcessManager(BaseManager):
         else:
             self.stdout_log_path = None
             self.stderr_log_path = None
+
+    def _remove_work_dir(self) -> None:
+        """Removes the work directory."""
+        if self.work_dir:
+            shutil.rmtree(self.work_dir)
+            self.work_dir = None
+
+    def _is_process_running(self, pid: int) -> bool:
+        """Check if a process with the given PID is running."""
+        if pid is None or pid <= 0:
+            return False
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            return False
+        else:
+            return True
+
+    def _open_log_files(self) -> Tuple[TextIO, TextIO]:
+        """Opens training log files and returns the file handles."""
+        try:
+            self._log_stdout_handle = open(self.stdout_log_path, "w")
+            self._log_stderr_handle = open(self.stderr_log_path, "w")
+            return self._log_stdout_handle, self._log_stderr_handle
+        except OSError as e:
+            print(f"Error opening log files: {e}")
+            if self._log_stdout_handle:
+                self._log_stdout_handle.close()
+            raise e
+
+    def _close_log_files(self) -> None:
+        """Closes any open log file handles."""
+        if self._log_stdout_handle and not self._log_stdout_handle.closed:
+            self._log_stdout_handle.close()
+            self._log_stdout_handle = None
+        if self._log_stderr_handle and not self._log_stderr_handle.closed:
+            self._log_stderr_handle.close()
+            self._log_stderr_handle = None
+
+    def _write_model_config(self, model_config: ModelConfig) -> None:
+        """Writes the model config to the model_config.json file."""
+        with open(f"{self.work_dir}/{MODEL_CONFIG_FILE}", "w") as f:
+            json.dump(asdict(model_config), f)
+
+    def _handle_dead_process(self) -> str:
+        """Handle case where process is dead but state says RUNNING."""
+        if self.training_process and self.training_process.poll() is not None:
+            exit_code = self.training_process.returncode
+            if exit_code == 0:
+                self.training_state_manager.mark_finished(
+                    time.strftime("%Y-%m-%dT%H:%M:%S")
+                )
+                
+                return TrainingStatus.FINISHED.value
+            else:
+                error_msg = (
+                    self.read_stderr_log()
+                    or "Process exited with non-zero code"
+                )
+                self.training_state_manager.mark_failed(
+                    error_msg, time.strftime("%Y-%m-%dT%H:%M:%S")
+                )
+                return TrainingStatus.FAILED.value
+        else:
+            self.training_state_manager.mark_orphaned("Process not found")
+            return TrainingStatus.ORPHANED.value

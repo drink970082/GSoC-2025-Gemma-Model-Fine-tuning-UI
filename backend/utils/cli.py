@@ -1,20 +1,14 @@
 import argparse
-import ast
-from typing import Dict
 import json
+from typing import Any, Dict
 
 
-def parse_dict_arg(arg: str) -> Dict:
-    """Parse a dictionary argument from command line."""
+def parse_json_arg(arg: str) -> Dict[str, Any]:
+    """Parse a JSON argument from command line."""
     try:
-        return ast.literal_eval(arg)
-    except (SyntaxError, ValueError) as e:
-        raise argparse.ArgumentTypeError(f"Invalid dictionary format: {e}")
-
-
-def parse_json_arg(arg: str) -> Dict:
-    # The 'arg' parameter is the big JSON string from the command line.
-    return json.loads(arg)
+        return json.loads(arg)
+    except json.JSONDecodeError as e:
+        raise argparse.ArgumentTypeError(f"Invalid JSON format: {e}")
 
 
 def create_parser() -> argparse.ArgumentParser:
