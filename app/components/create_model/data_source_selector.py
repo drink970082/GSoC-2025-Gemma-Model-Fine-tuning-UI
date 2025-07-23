@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import tempfile
 from typing import Optional, List, Dict, Any, Tuple
@@ -6,8 +7,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import treescope
 from streamlit.runtime.uploaded_file_manager import UploadedFile
-
-from backend.data_pipeline import create_pipeline, DataPipeline
 from config.dataclass import DataConfig
 
 # Constants
@@ -197,6 +196,8 @@ def _get_seq2seq_config() -> Dict[str, Any]:
 
 def _show_dataset_preview(data_config: DataConfig) -> None:
     """Show dataset preview if requested."""
+    from backend.data_pipeline import create_pipeline
+
     if st.button("Preview Dataset", type="secondary"):
         try:
             pipeline = create_pipeline(data_config)
@@ -211,7 +212,7 @@ def _show_dataset_preview(data_config: DataConfig) -> None:
             st.error(f"Error creating preview: {e}")
 
 
-def _display_raw_preview(pipeline: DataPipeline) -> None:
+def _display_raw_preview(pipeline: DataPipeline) -> None: # type: ignore
     """Display raw data preview."""
     st.markdown("#### Human-Readable Source Data")
     try:
@@ -233,7 +234,7 @@ def _display_raw_preview(pipeline: DataPipeline) -> None:
         st.error(f"Error loading raw preview: {e}")
 
 
-def _display_tokenized_preview(pipeline: DataPipeline) -> None:
+def _display_tokenized_preview(pipeline: DataPipeline) -> None:  # type: ignore
     """Display tokenized preview."""
     st.markdown("#### Model Input After Tokenization")
     try:
@@ -268,7 +269,7 @@ def _display_tokenized_preview(pipeline: DataPipeline) -> None:
 
 
 def _extract_conversation_turns(
-    pipeline: DataPipeline, tokenized_examples: dict
+    pipeline: DataPipeline, tokenized_examples: dict # type: ignore
 ) -> List[dict]:
     """Extract conversation turns from tokenized examples."""
     turns: List[dict] = []

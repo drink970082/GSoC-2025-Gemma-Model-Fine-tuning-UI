@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import streamlit as st
 
 from config.app_config import get_config
-from backend.inferencer import Inferencer
-
 
 config = get_config()
 
 
 def show_checkpoint_selection() -> None:
     if st.session_state.inferencer is None:
-        st.session_state.inferencer = Inferencer(work_dir=config.CHECKPOINT_FOLDER)
+        from backend.inferencer import Inferencer
+
+        st.session_state.inferencer = Inferencer(
+            work_dir=config.CHECKPOINT_FOLDER
+        )
     checkpoints = st.session_state.inferencer.list_checkpoints()
     if not checkpoints:
         st.warning("No checkpoints found.")
@@ -34,7 +38,7 @@ def show_checkpoint_selection() -> None:
 
 
 def _load_selected_checkpoint(
-    inferencer: Inferencer, selected_checkpoint: str
+    inferencer: Inferencer, selected_checkpoint: str  # type: ignore
 ) -> None:
     """Load the selected checkpoint."""
     with st.spinner(f"Loading checkpoint: {selected_checkpoint}"):
@@ -45,7 +49,7 @@ def _load_selected_checkpoint(
 
 
 def _delete_selected_checkpoint(
-    inferencer: Inferencer, selected_checkpoint: str
+    inferencer: Inferencer, selected_checkpoint: str  # type: ignore
 ) -> None:
     """Delete the selected checkpoint."""
     if inferencer.delete_checkpoint(selected_checkpoint):

@@ -14,6 +14,8 @@ def _initialize_session_state() -> None:
         st.session_state.view = "welcome"
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
+    if "abort_confirmation" not in st.session_state:
+        st.session_state.abort_confirmation = False
     if "abort_training" not in st.session_state:
         st.session_state.abort_training = False
     if "inferencer" not in st.session_state:
@@ -47,8 +49,9 @@ def default_config() -> TrainingConfig:
             epochs=1,
             learning_rate=1e-4,
             method="Standard",
-        )
+        ),
     )
+
 
 # --- Main Application ---
 def main() -> None:
