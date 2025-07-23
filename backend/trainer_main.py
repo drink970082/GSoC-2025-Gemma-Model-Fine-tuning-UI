@@ -48,6 +48,8 @@ def main() -> None:
         work_dir = args.work_dir
         trainer = ModelTrainer(training_config, work_dir)
         trainer.train()
+        print("trainer_main.py: Script execution completed.")
+        sys.exit(0)
     except ValueError as e:
         print(f"trainer_main.py: Configuration error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -57,9 +59,7 @@ def main() -> None:
             file=sys.stderr,
         )
         sys.exit(1)
-    finally:
-        print("trainer_main.py: Script execution completed.")
-        sys.exit(0)
+
 
 
 if __name__ == "__main__":

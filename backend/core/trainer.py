@@ -1,11 +1,11 @@
 import os
 import sys
 import traceback
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 
 from config.dataclass import TrainingConfig
 from config.app_config import get_config
-from backend.data_pipeline import create_pipeline, DataPipeline
+from backend.data_pipeline import create_pipeline
 from backend.core.fine_tuner import FINE_TUNE_STRATEGIES
 
 config = get_config()
