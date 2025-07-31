@@ -10,7 +10,12 @@ def show_inference_input_section() -> None:
         placeholder="Type your message here...",
         height=100,
     )
-    if st.button("Generate Response", type="primary", use_container_width=True):
+    if st.button(
+        "Generate Response",
+        type="primary",
+        use_container_width=True,
+        key="generate_response",
+    ):
         if not prompt.strip():
             st.warning("Please enter a prompt.")
             return

@@ -198,7 +198,7 @@ def _show_dataset_preview(data_config: DataConfig) -> None:
     """Show dataset preview if requested."""
     from backend.data_pipeline import create_pipeline
 
-    if st.button("Preview Dataset", type="secondary"):
+    if st.button("Preview Dataset", type="secondary", key="preview_dataset"):
         try:
             pipeline = create_pipeline(data_config)
             tab1, tab2 = st.tabs(

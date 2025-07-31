@@ -72,7 +72,7 @@ def main() -> None:
     # Sidebar for navigation
     with st.sidebar:
         st.header("Navigation")
-        if st.button("Back to Home", use_container_width=True):
+        if st.button("Back to Home", use_container_width=True, key="back_to_home"):
             st.session_state.view = "welcome"
             st.rerun()
 

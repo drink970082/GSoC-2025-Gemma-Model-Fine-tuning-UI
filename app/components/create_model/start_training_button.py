@@ -2,6 +2,7 @@ import streamlit as st
 from config.dataclass import TrainingConfig
 from backend.data_pipeline import create_pipeline
 
+
 def show_start_training_section(config: TrainingConfig) -> bool:
     """Display the start training section and handle validation."""
     if st.button(
@@ -23,6 +24,7 @@ def show_start_training_section(config: TrainingConfig) -> bool:
         try:
             pipeline = create_pipeline(config.data_config)
             pipeline.get_train_dataset()
+            pass
         except Exception as e:
             st.error(f"Error creating pipeline: {e}")
             return False

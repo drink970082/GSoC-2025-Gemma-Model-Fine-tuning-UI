@@ -24,14 +24,22 @@ def show_checkpoint_selection() -> None:
     col1, col2 = st.columns([1, 1])
     with col1:
         if st.button(
-            "Load checkpoint", type="primary", use_container_width=True
+            "Load checkpoint",
+            type="primary",
+            use_container_width=True,
+            key="load_checkpoint",
         ):
             _load_selected_checkpoint(
                 st.session_state.inferencer, selected_checkpoint
             )
 
     with col2:
-        if st.button("Delete", type="secondary", use_container_width=True):
+        if st.button(
+            "Delete",
+            type="secondary",
+            use_container_width=True,
+            key="delete_checkpoint",
+        ):
             _delete_selected_checkpoint(
                 st.session_state.inferencer, selected_checkpoint
             )
