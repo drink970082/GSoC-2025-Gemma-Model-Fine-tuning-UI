@@ -38,7 +38,6 @@ class Inferencer:
     def get_latest_checkpoint(self) -> Optional[str]:
         """Return the path of the most recently created checkpoint directory."""
         checkpoints = self.list_checkpoints()
-        print(checkpoints)
         return checkpoints[0] if checkpoints else None
 
     def delete_checkpoint(self, checkpoint_name: str) -> bool:

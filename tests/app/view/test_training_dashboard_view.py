@@ -1,6 +1,6 @@
 from streamlit.testing.v1 import AppTest
 
-from tests.app.view.utils import mock_training_service, setup_di_mock
+from tests.app.utils import mock_training_service, setup_di_mock
 
 
 # Poll Training Status Tests

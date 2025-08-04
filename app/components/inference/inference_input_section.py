@@ -9,6 +9,7 @@ def show_inference_input_section() -> None:
         "Enter your prompt:",
         placeholder="Type your message here...",
         height=100,
+        key="prompt_input",
     )
     if st.button(
         "Generate Response",

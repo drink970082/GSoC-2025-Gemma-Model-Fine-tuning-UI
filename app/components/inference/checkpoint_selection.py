@@ -19,7 +19,10 @@ def show_checkpoint_selection() -> None:
         st.warning("No checkpoints found.")
         return
     selected_checkpoint = st.selectbox(
-        "Select a checkpoint for inference:", checkpoints, index=0
+        "Select a checkpoint for inference:",
+        checkpoints,
+        index=0,
+        key="checkpoint_selection",
     )
     col1, col2 = st.columns([1, 1])
     with col1:

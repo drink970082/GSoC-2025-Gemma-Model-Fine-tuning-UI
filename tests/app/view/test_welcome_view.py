@@ -1,6 +1,6 @@
 from streamlit.testing.v1 import AppTest
 
-from tests.app.view.utils import (
+from tests.app.utils import (
     setup_di_mock,
     mock_training_service,
 )

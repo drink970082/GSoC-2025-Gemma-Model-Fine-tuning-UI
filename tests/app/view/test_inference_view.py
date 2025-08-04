@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from streamlit.testing.v1 import AppTest
 
-from tests.app.view.utils import setup_di_mock
+from tests.app.utils import setup_di_mock
 
 
 def mock_inferencer():
