@@ -26,6 +26,20 @@ def mock_training_service(
     svc.get_log_contents.return_value = log_contents
     return svc
 
+@pytest.fixture
+def mock_create_pipeline(monkeypatch):
+    """Mock create_pipeline for pipeline creation.(avoid heavy imports)"""
+    mock_pipeline = MagicMock()
+    mock_pipeline.get_train_dataset.return_value = MagicMock()
+
+    def mock_create_pipeline_func(config):
+        return mock_pipeline
+
+    monkeypatch.setattr(
+        "app.components.create_model.start_training_button.create_pipeline",
+        mock_create_pipeline_func,
+    )
+    return mock_pipeline
 
 def get_default_config() -> TrainingConfig:
     """Default training configuration for testing."""

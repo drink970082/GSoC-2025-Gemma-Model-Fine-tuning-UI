@@ -9,6 +9,10 @@ def show_start_training_section(config: TrainingConfig) -> bool:
     if st.button(
         "Start Fine-tuning", type="primary", key="start_training_button"
     ):
+        if not config:
+            st.error("Please enter all the fields.")
+            return False
+
         # Model name validation
         if not config.model_name or not config.model_name.strip():
             st.error("Please enter a model name")

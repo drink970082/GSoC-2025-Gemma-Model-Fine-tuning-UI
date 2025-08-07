@@ -62,7 +62,6 @@ def _get_source_config(data_source: str) -> Tuple[str, str, Optional[str], str]:
     dataset_name = ""
     dataset_config = None
     split = "train"
-    print(data_source)
 
     if data_source == "HuggingFace Dataset":
         source = "huggingface"

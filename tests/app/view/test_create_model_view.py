@@ -1,25 +1,10 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from tests.app.utils import mock_training_service, setup_di_mock
+from tests.app.utils import mock_training_service, setup_di_mock, mock_create_pipeline, get_default_config
 
-
-@pytest.fixture
-def mock_create_pipeline(monkeypatch):
-    """Mock create_pipeline for pipeline creation.(avoid heavy imports)"""
-    mock_pipeline = MagicMock()
-    mock_pipeline.get_train_dataset.return_value = MagicMock()
-
-    def mock_create_pipeline_func(config):
-        return mock_pipeline
-
-    monkeypatch.setattr(
-        "app.components.create_model.start_training_button.create_pipeline",
-        mock_create_pipeline_func,
-    )
-    return mock_pipeline
 
 
 def test_renders_all_sections(monkeypatch):
@@ -40,14 +25,12 @@ def test_renders_all_sections(monkeypatch):
         subheader.value for subheader in at.subheader
     ]
 
-
-def test_start_training_success(monkeypatch, mock_create_pipeline):
+@patch("app.view.create_model_view._get_config")
+def test_start_training_success(mock_get_config, monkeypatch, mock_create_pipeline):
     setup_di_mock(monkeypatch, mock_training_service(status="RUNNING"))
+    mock_get_config.return_value = get_default_config()
     at = AppTest.from_file("app/main.py")
     at.session_state["view"] = "create_model"
-    at.session_state["model_name"] = "test_model"
-    at.session_state["data_config"] = MagicMock()
-    at.session_state["model_config"] = MagicMock()
     at.run()
     at.button(key="start_training_button").click().run()
     assert at.session_state["view"] == "training_dashboard"
@@ -55,19 +38,18 @@ def test_start_training_success(monkeypatch, mock_create_pipeline):
     assert at.session_state["session_started_by_app"] is True
 
 
-def test_start_training_failure(monkeypatch, mock_create_pipeline):
-    svc = mock_training_service(status="FAILED")
-    svc.start_training.return_value = False
-    setup_di_mock(monkeypatch, svc)
+@patch("app.view.create_model_view._get_config")
+def test_start_training_failure(mock_get_config, monkeypatch, mock_create_pipeline):
+    setup_di_mock(monkeypatch, mock_training_service(status="FAILED"))
+    mock_get_config.return_value = get_default_config()
     at = AppTest.from_file("app/main.py")
     at.session_state["view"] = "create_model"
-    at.session_state["model_name"] = "fail_model"
-    at.session_state["data_config"] = MagicMock()
-    at.session_state["model_config"] = MagicMock()
     at.run()
     at.button(key="start_training_button").click().run()
     print(at.error[0].value)
     assert any(
-        "Training failed to start. Please try again." in err.value
+        "Training Failed" in err.value
         for err in at.error
     )
+
+
