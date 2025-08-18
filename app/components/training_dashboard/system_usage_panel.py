@@ -12,20 +12,16 @@ def display_system_usage_panel(training_service: TrainingService) -> None:
         st.warning("NVIDIA GPU not detected. GPU monitoring is disabled.")
     system_history = training_service.get_system_usage_history()
     # Check if we have enough data
-    cpu_history = system_history.get("CPU Utilization (%)", pd.DataFrame())
-    if len(cpu_history) < MIN_DATA_POINTS:
-        st.info("Collecting system usage data...")
-        return
-
-    # Filter charts based on available data and GPU status
     available_charts = {
         label: data
         for label, data in system_history.items()
-        if not data.empty and ("GPU" not in label or training_service.has_gpu())
+        if not data.empty
+        and len(data) >= MIN_DATA_POINTS
+        and ("GPU" not in label or training_service.has_gpu())
     }
-    
+    print(available_charts)
     if not available_charts:
-        st.info("No system data available to display.")
+        st.info("Collecting system usage data...")
         return
 
     # Display charts

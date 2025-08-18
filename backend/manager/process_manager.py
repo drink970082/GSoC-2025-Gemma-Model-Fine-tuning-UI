@@ -37,7 +37,6 @@ class ProcessManager(BaseManager):
     def cleanup(self) -> None:
         """Cleanup method called by atexit."""
         self.terminate_process(mode="force", delete_checkpoint=True)
-        self.training_state_manager.mark_idle()
 
     def update_config(self, training_config: TrainingConfig) -> None:
         """Update the training configuration."""
@@ -198,7 +197,6 @@ class ProcessManager(BaseManager):
         self.app_config = None
         self.work_dir = None
         self.training_state_manager.cleanup()
-        self.training_state_manager.mark_idle()
 
     def set_work_dir(self, work_dir: Optional[str]) -> None:
         """Set the work directory and derive file paths."""

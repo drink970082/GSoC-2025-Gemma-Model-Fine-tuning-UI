@@ -17,28 +17,23 @@ MAX_LORA_RANK = 32
 def show_model_selection_section() -> ModelConfig:
     """Display the model selection and task type section."""
 
-    # Model selection
     model_variant = st.selectbox(
         "Select Gemma Model",
         list(MODEL_INFO.keys()),
         index=DEFAULT_MODEL_INDEX,
         help="Choose the model size based on your task and available resources",
+        key="gemma_model_selector",
     )
     _display_model_info(model_variant)
-
-    # Fine-tuning method selection
     method = st.radio(
         "Select Fine-tuning Method",
         list(FINE_TUNING_METHODS.keys()),
         help="Choose the fine-tuning approach based on your needs",
         horizontal=True,
+        key="fine_tuning_method_selector",
     )
     _display_method_info(method)
-
-    # Create method parameters
     params = _create_method_parameters(method)
-
-    # Get training parameters
     epochs, learning_rate = _get_training_parameters(method)
 
     return ModelConfig(
@@ -60,6 +55,7 @@ def _create_lora_parameters() -> LoraParams:
         MAX_LORA_RANK,
         lora_config["lora_rank"]["default"],
         help=lora_config["lora_rank"]["description"],
+        key="lora_rank_input",
     )
     return LoraParams(lora_rank=lora_rank)
 
@@ -128,6 +124,7 @@ def _get_training_parameters(method: str) -> Tuple[int, float]:
             value=FINE_TUNING_METHODS[method]["default_parameters"]["epochs"],
             step=1,
             help="Enter the total number of training epochs",
+            key="epochs_input",
         )
 
     with col2:
@@ -140,7 +137,8 @@ def _get_training_parameters(method: str) -> Tuple[int, float]:
             ],
             step=MIN_LEARNING_RATE,
             format="%.3e",
-            help="Set the learning rate. Small values like 1e-4 or 1e-5 are common",
+            help="Set the learning rate. Higher values are faster but more unstable, lower values are slower but more stable.",
+            key="learning_rate_input",
         )
 
     return epochs, round(learning_rate, 6)

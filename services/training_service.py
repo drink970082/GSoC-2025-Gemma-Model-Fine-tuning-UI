@@ -32,23 +32,20 @@ class TrainingService:
 
     def start_training(self, training_config: TrainingConfig) -> None:
         """Starts the training process."""
-        if self.process_manager.get_status() == "RUNNING":
+        if self.is_training_running() == "RUNNING":
             st.warning("Training is already in progress.")
-            return
-
-        self.training_config = training_config
-        self.process_manager.update_config(training_config)
-        self._set_work_dir(training_config.model_name)
-        self.process_manager.start_training()
-
-    def wait_for_state_file(self, timeout: int = 10) -> bool:
-        """Wait for the state file to be created."""
-        for _ in range(timeout):
-            if self.process_manager.get_status() == "RUNNING":
-                return True
-            time.sleep(1)
-        st.error("Training process did not start within timeout.")
-        return False
+            return False
+        try:
+            self.training_config = training_config
+            self.process_manager.update_config(training_config)
+            self._set_work_dir(training_config.model_name)
+            self.process_manager.start_training()
+            self._wait_for_state_file()
+            assert self.is_training_running() == "RUNNING"
+            return True
+        except Exception as e:
+            st.error(f"Training Failed: {e}")
+            return False
 
     def stop_training(
         self, mode: Literal["graceful", "force"] = "graceful"
@@ -96,7 +93,9 @@ class TrainingService:
 
     def get_kpi_data(self) -> Dict[str, Any]:
         """Gathers all relevant latest metrics and metadata for the UI KPI panel."""
-        return self.tensorboard_manager.get_kpi_data(self.training_config.model_config.epochs)
+        return self.tensorboard_manager.get_kpi_data(
+            self.training_config.model_config.epochs
+        )
 
     def get_training_metrics(self) -> Dict[str, pd.DataFrame]:
         """Get the training metrics from the TensorBoard manager."""
@@ -115,6 +114,15 @@ class TrainingService:
         stdout = self.process_manager.read_stdout_log()
         stderr = self.process_manager.read_stderr_log()
         return stdout, stderr
+
+    def _wait_for_state_file(self, timeout: int = 10) -> bool:
+        """Wait for the state file to be created."""
+        for _ in range(timeout * 2):
+            if self.is_training_running() == "RUNNING":
+                return
+            time.sleep(0.5)
+        st.error("Training process did not start within timeout.")
+        raise Exception("Training process did not start within timeout.")
 
     def _set_work_dir(self, model_name: str) -> None:
         """Updates the work directory with the model configuration."""

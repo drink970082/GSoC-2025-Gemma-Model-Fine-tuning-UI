@@ -1,5 +1,7 @@
-import streamlit as st
 from typing import Optional
+
+import streamlit as st
+
 from app.components.create_model.config_summary import (
     show_configuration_preview,
 )
@@ -13,8 +15,8 @@ from app.components.create_model.model_selector import (
 from app.components.create_model.start_training_button import (
     show_start_training_section,
 )
+from config.dataclass import DataConfig, ModelConfig, TrainingConfig
 from services.training_service import TrainingService
-from config.dataclass import TrainingConfig, DataConfig, ModelConfig
 
 
 def _get_config(
@@ -31,26 +33,31 @@ def _get_config(
         )
     return None
 
+
 def _reset_session_state() -> None:
     """Reset the session state to its initial values."""
-    st.session_state.abort_training = False
-    st.session_state.session_started_by_app = True
-    st.session_state.frozen_kpi_data = {}
-    st.session_state.frozen_log = "No logs available."
-    st.session_state.frozen_loss_metrics = {}
-    st.session_state.frozen_perf_metrics = {}
+    st.session_state["abort_training"] = False
+    st.session_state["session_started_by_app"] = True
+    st.session_state["frozen_kpi_data"] = {}
+    st.session_state["frozen_log"] = "No logs available."
+    st.session_state["frozen_loss_metrics"] = {}
+    st.session_state["frozen_perf_metrics"] = {}
 
-def _handle_training_start(training_service: TrainingService, training_config: TrainingConfig) -> None:
+
+def _handle_training_start(
+    training_service: TrainingService, training_config: TrainingConfig
+) -> None:
     """Handle training start process."""
-    with st.spinner("Waiting for training process to initialize...", show_time=True):
-        training_service.start_training(training_config)
+    with st.spinner(
+        "Waiting for training process to initialize...", show_time=True
+    ):
         _reset_session_state()
-        
-        if training_service.wait_for_state_file():
-            st.session_state.view = "training_dashboard"
+        if training_service.start_training(training_config):
+            st.session_state["view"] = "training_dashboard"
             st.rerun()
         else:
             st.error("Training failed to start. Please try again.")
+
 
 def show_create_model_view(training_service: TrainingService) -> None:
     """Display the create model interface."""

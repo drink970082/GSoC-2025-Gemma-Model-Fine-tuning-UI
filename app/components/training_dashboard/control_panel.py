@@ -13,7 +13,9 @@ def _create_shutdown_button(
     label: str, training_service: TrainingService
 ) -> None:
     """Create a shutdown button with graceful/forceful fallback."""
-    if st.button(label, type="primary", use_container_width=True):
+    if st.button(
+        label, type="primary", use_container_width=True, key="shutdown_training"
+    ):
         with st.spinner(
             "Waiting for processes to terminate...", show_time=True
         ):
@@ -43,11 +45,16 @@ def _create_next_step_buttons() -> None:
             "Go to Inference Playground",
             use_container_width=True,
             type="primary",
+            key="go_to_inference",
         ):
             st.session_state.view = "inference"
             st.rerun()
     with col2:
-        if st.button("Create New Model", use_container_width=True):
+        if st.button(
+            "Create New Model",
+            use_container_width=True,
+            key="create_new_model",
+        ):
             st.session_state.view = "create_model"
             st.rerun()
 
@@ -73,7 +80,11 @@ def display_control_panel(training_service: TrainingService) -> None:
 
     if st.session_state.abort_training:
         st.info("Training aborted. Please reset the application.")
-        if st.button("Go to Welcome Page", use_container_width=True):
+        if st.button(
+            "Go to Welcome Page",
+            use_container_width=True,
+            key="go_to_welcome",
+        ):
             st.session_state.view = "welcome"
             st.rerun()
         return

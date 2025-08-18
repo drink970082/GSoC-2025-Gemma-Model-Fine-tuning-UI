@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import tempfile
 from typing import Optional, List, Dict, Any, Tuple
@@ -6,8 +7,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 import treescope
 from streamlit.runtime.uploaded_file_manager import UploadedFile
-
-from backend.data_pipeline import create_pipeline, DataPipeline
 from config.dataclass import DataConfig
 
 # Constants
@@ -24,6 +23,7 @@ def show_data_source_section() -> DataConfig:
     data_source = st.radio(
         "Select Data Source",
         ["HuggingFace Dataset", "TensorFlow Dataset", "Custom JSON Upload"],
+        key="data_source_selector",
     )
 
     # Get source-specific configuration
@@ -68,17 +68,19 @@ def _get_source_config(data_source: str) -> Tuple[str, str, Optional[str], str]:
         dataset_name = st.text_input(
             "Dataset Name",
             placeholder="e.g., google/fleurs, open-r1/Mixture-of-Thoughts",
-            value="fka/awesome-chatgpt-prompts",
+            key="dataset_name_input",
         )
         dataset_config = st.text_input(
             "Dataset Config",
             help="Optional: Specify dataset-specific config (like language/domain). Leave empty for default 'main' config.",
             placeholder="e.g., hi_in, code",
+            key="dataset_config_input",
         )
         split = st.text_input(
             "Split",
             help="Optional: Specify dataset split. Leave empty for default 'train' split.",
             placeholder="e.g., train, train[:80%], train[80%:]",
+            key="split_input",
         )
 
     elif data_source == "TensorFlow Dataset":
@@ -86,13 +88,13 @@ def _get_source_config(data_source: str) -> Tuple[str, str, Optional[str], str]:
         dataset_name = st.text_input(
             "TensorFlow Dataset Name",
             placeholder="e.g., mtnt, mtnt/en-fr",
-            value="mtnt",
+            key="dataset_name_input",
         )
         split = st.text_input(
             "Split",
-            value="train",
             help="Optional: Specify dataset split. Leave empty for default 'train' split.",
             placeholder="e.g., train, train[:80%], train[80%:]",
+            key="split_input",
         )
 
     else:  # Custom JSON Upload
@@ -101,6 +103,7 @@ def _get_source_config(data_source: str) -> Tuple[str, str, Optional[str], str]:
             "Upload JSON file",
             type=["json"],
             help="Upload a JSON file containing your training data",
+            key="uploaded_file_input",
         )
         if uploaded_file:
             dataset_name = _process_uploaded_json(uploaded_file)
@@ -140,6 +143,7 @@ def _get_common_config() -> Tuple[bool, int]:
             "Shuffle Dataset",
             value=True,
             help="Whether to shuffle the dataset before training",
+            key="shuffle_checkbox",
         )
 
     with col2:
@@ -149,6 +153,7 @@ def _get_common_config() -> Tuple[bool, int]:
             max_value=MAX_BATCH_SIZE,
             value=DEFAULT_BATCH_SIZE,
             help="Select the number of samples to process in each batch",
+            key="batch_size_slider",
         )
 
     return shuffle, batch_size
@@ -164,8 +169,8 @@ def _get_seq2seq_config() -> Dict[str, Any]:
         with col1:
             prompt_field = st.text_input(
                 "Source Field Name",
-                value="src",
                 help="Field name for source text (prompt) in the dataset",
+                key="prompt_field_input",
             )
             max_length = st.number_input(
                 "Maximum Sequence Length",
@@ -173,18 +178,20 @@ def _get_seq2seq_config() -> Dict[str, Any]:
                 max_value=MAX_SEQ_LENGTH,
                 value=DEFAULT_SEQ_LENGTH,
                 help="Maximum length of input sequences",
+                key="max_length_input",
             )
 
         with col2:
             response_field = st.text_input(
                 "Target Field Name",
-                value="dst",
                 help="Field name for target text (response) in the dataset",
+                key="response_field_input",
             )
             truncate = st.checkbox(
                 "Truncate Long Sequences",
                 value=True,
                 help="Whether to truncate sequences longer than max_length",
+                key="truncate_checkbox",
             )
 
     return {
@@ -197,7 +204,9 @@ def _get_seq2seq_config() -> Dict[str, Any]:
 
 def _show_dataset_preview(data_config: DataConfig) -> None:
     """Show dataset preview if requested."""
-    if st.button("Preview Dataset", type="secondary"):
+    from backend.data_pipeline import create_pipeline
+
+    if st.button("Preview Dataset", type="secondary", key="preview_dataset"):
         try:
             pipeline = create_pipeline(data_config)
             tab1, tab2 = st.tabs(
@@ -211,7 +220,7 @@ def _show_dataset_preview(data_config: DataConfig) -> None:
             st.error(f"Error creating preview: {e}")
 
 
-def _display_raw_preview(pipeline: DataPipeline) -> None:
+def _display_raw_preview(pipeline: DataPipeline) -> None:  # type: ignore
     """Display raw data preview."""
     st.markdown("#### Human-Readable Source Data")
     try:
@@ -233,7 +242,7 @@ def _display_raw_preview(pipeline: DataPipeline) -> None:
         st.error(f"Error loading raw preview: {e}")
 
 
-def _display_tokenized_preview(pipeline: DataPipeline) -> None:
+def _display_tokenized_preview(pipeline: DataPipeline) -> None:  # type: ignore
     """Display tokenized preview."""
     st.markdown("#### Model Input After Tokenization")
     try:
@@ -268,7 +277,7 @@ def _display_tokenized_preview(pipeline: DataPipeline) -> None:
 
 
 def _extract_conversation_turns(
-    pipeline: DataPipeline, tokenized_examples: dict
+    pipeline: DataPipeline, tokenized_examples: dict  # type: ignore
 ) -> List[dict]:
     """Extract conversation turns from tokenized examples."""
     turns: List[dict] = []
