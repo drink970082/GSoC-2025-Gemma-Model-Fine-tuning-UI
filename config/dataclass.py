@@ -8,10 +8,6 @@ class LoraParams:
 
 
 @dataclass
-class DpoParams:
-    dpo_beta: float
-
-@dataclass
 class DataConfig:
     source: Literal["tensorflow", "huggingface", "json"]
     dataset_name: str
@@ -30,8 +26,8 @@ class ModelConfig:
     model_variant: str
     epochs: int
     learning_rate: float
-    method: Literal["Standard", "LoRA", "DPO"]
-    parameters: Optional[Union[LoraParams, DpoParams]] = None
+    method: Literal["Standard", "LoRA", "QuantizationAware"]
+    parameters: Optional[Union[LoraParams]] = None
 
 
 @dataclass

@@ -25,7 +25,10 @@ class TensorBoardManager(BaseManager):
 
     def get_kpi_data(self, total_steps: int) -> Dict[str, Any]:
         """Get KPI data."""
-        data = self.event_file_parser.load_event_data()
+        try:
+            data = self.event_file_parser.load_event_data()
+        except Exception as e:
+            raise ValueError(f"Error loading event data: {e}")
         if not data:
             return {}
         metadata = data['metadata']
@@ -68,7 +71,10 @@ class TensorBoardManager(BaseManager):
 
     def get_training_metrics(self) -> Dict[str, pd.DataFrame]:
         """Get the training metrics from the TensorBoard manager."""
-        data = self.event_file_parser.load_event_data()
+        try:
+            data = self.event_file_parser.load_event_data()
+        except Exception as e:
+            raise ValueError(f"Error loading event data: {e}")
         return data.get('training_metrics', {})
 
     def _get_eta_str(

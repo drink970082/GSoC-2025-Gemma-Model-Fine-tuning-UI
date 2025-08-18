@@ -90,7 +90,7 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ## Training
 
-- **Methods:** Standard, LoRA (DPO in config, not implemented)
+- **Methods:** Standard, LoRA, QuantizationAware
 - **Variants:** Any Gemma model supported by `gemma.gm.nn`
 - **Checkpoints:** Automatic, with recovery and cleanup
 
@@ -108,7 +108,7 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 - **Training stuck:** Check GPU, dataset, logs
 - **UI unresponsive:** Refresh browser, restart Streamlit
-- **OOM:** Lower batch size, use LoRA
+- **OOM:** Lower batch size, use LoRA or QuantizationAware
 - **Orphaned processes:** Use UI reset, check for stale lock files
 
 ---
@@ -171,5 +171,4 @@ Apache 2.0. See [LICENSE](LICENSE).
 ## Notes
 
 - No support for Windows native.
-- DPO/PEFT not implemented, only Standard and LoRA.
 - For bug reports or feature requests, use GitHub Issues.
