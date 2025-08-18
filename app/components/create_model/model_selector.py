@@ -2,7 +2,7 @@ from typing import Tuple, Union
 
 import streamlit as st
 
-from config.dataclass import DpoParams, LoraParams, ModelConfig
+from config.dataclass import LoraParams, ModelConfig
 from config.fine_tuning_info import FINE_TUNING_METHODS
 from config.model_info import MODEL_INFO
 
@@ -105,7 +105,7 @@ def _display_method_info(method: str) -> None:
 
 def _create_method_parameters(
     method: str,
-) -> Union[LoraParams, DpoParams, None]:
+) -> Union[LoraParams, None]:
     """Create parameters based on the selected method."""
     if method == "LoRA":
         return _create_lora_parameters()
