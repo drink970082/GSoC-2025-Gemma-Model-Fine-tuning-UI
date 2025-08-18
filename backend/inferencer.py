@@ -67,15 +67,15 @@ class Inferencer:
             return False
 
         try:
-            # Load trained parameters
-            self.params = Model.load_trained_params(
-                self._get_checkpoint_path(full_checkpoint_path)
-            )
-
             # Load model configuration
             config_file = os.path.join(full_checkpoint_path, MODEL_CONFIG_FILE)
             with open(config_file, "r") as f:
                 model_config = self._parse_model_config(json.load(f))
+
+            # Load trained parameters
+            self.params = Model.load_trained_params(
+                self._get_checkpoint_path(full_checkpoint_path), method=model_config.method
+            )
 
             # Create model
             self.model = self._create_model_from_config(model_config)
@@ -140,9 +140,6 @@ class Inferencer:
             method = model_config_dict["method"]
             if method == "LoRA":
                 parameters = LoraParams(**model_config_dict["parameters"])
-            elif method == "DPO":
-                parameters = DpoParams(**model_config_dict["parameters"])
-
         return ModelConfig(
             model_variant=model_config_dict["model_variant"],
             epochs=model_config_dict["epochs"],
@@ -157,5 +154,8 @@ class Inferencer:
             return Model.create_lora_model(
                 model_config.model_variant, model_config.parameters.lora_rank
             )
+        elif model_config.method == "QuantizationAware":
+            return Model.create_quantization_aware_model_inference(model_config.model_variant)
         else:
             return Model.create_standard_model(model_config.model_variant)
+

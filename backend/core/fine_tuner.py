@@ -99,7 +99,34 @@ class LoRATrainer(Trainer):
         )
 
 
+class QuantizationAwareTrainer(Trainer):
+    """Trainer for quantization aware models."""
+
+    def create_trainer(
+        self,
+        training_config: TrainingConfig,
+        train_ds: kd.data.Pipeline,
+        workdir: str,
+    ) -> kd.train.Trainer:
+        model = Model.create_quantization_aware_model(
+            training_config.model_config.model_variant
+        )
+        init_transform = Checkpoint.create_standard_checkpoint(
+            training_config.model_config.model_variant
+        )
+        optimizer = Optimizer.create_standard_optimizer(
+            training_config.model_config.learning_rate
+        )
+        return super().create_trainer(
+            model,
+            init_transform,
+            optimizer,
+            train_ds,
+            workdir,
+            training_config.model_config.epochs,
+        )
 FINE_TUNE_STRATEGIES: dict[str, Trainer] = {
     "Standard": StandardTrainer(),
     "LoRA": LoRATrainer(),
+    "QuantizationAware": QuantizationAwareTrainer(),
 }
