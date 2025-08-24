@@ -10,12 +10,11 @@ setup(
     install_requires=[
         "streamlit",
         "pandas",
+        "numpy",
         "plotly",
         "requests",
-        "jax",
-        "jax[cuda12]",
         "gemma",
-        "ipykernel",
+        "datasets",
     ],
     python_requires=">=3.8",
 )
