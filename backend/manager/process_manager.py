@@ -5,12 +5,13 @@ import signal
 import subprocess
 import time
 from dataclasses import asdict
-from typing import Literal, Optional, Tuple, Any, TextIO
+from typing import Any, Literal, Optional, TextIO, Tuple
+
 import streamlit as st
 
 from backend.manager.base_manager import BaseManager
 from backend.manager.training_state_manager import TrainingStateManager
-from config.app_config import get_config, TrainingStatus
+from config.app_config import TrainingStatus, get_config
 from config.dataclass import ModelConfig, TrainingConfig
 
 config = get_config()
@@ -263,7 +264,7 @@ class ProcessManager(BaseManager):
                 self.training_state_manager.mark_finished(
                     time.strftime("%Y-%m-%dT%H:%M:%S")
                 )
-                
+
                 return TrainingStatus.FINISHED.value
             else:
                 error_msg = (

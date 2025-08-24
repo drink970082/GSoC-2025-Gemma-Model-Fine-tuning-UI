@@ -19,7 +19,6 @@ def display_system_usage_panel(training_service: TrainingService) -> None:
         and len(data) >= MIN_DATA_POINTS
         and ("GPU" not in label or training_service.has_gpu())
     }
-    print(available_charts)
     if not available_charts:
         st.info("Collecting system usage data...")
         return

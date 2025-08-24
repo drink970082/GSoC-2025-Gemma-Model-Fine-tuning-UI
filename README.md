@@ -39,7 +39,7 @@ gemma_fine_tuning_ui/
 ## Installation
 
 **Prerequisites:**  
-- Python 3.8–3.12  
+- Python 3.8–3.11
 - CUDA-compatible GPU recommended  
 - Linux (WSL2 or native)
 
@@ -53,7 +53,7 @@ sudo apt-get update
 sudo apt-get install -y pkg-config cmake
 
 # Python deps
-pip install -r requirements.txt
+pip install -e .
 
 # JAX (choose one)
 pip install jax           # CPU only
@@ -74,7 +74,7 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 ## Workflow
 
 1. **Welcome:** Choose to create a new model or use existing checkpoints.
-2. **Model Creation:** Select model variant, fine-tuning method (Standard/LoRA), data source, and training params.
+2. **Model Creation:** Select model variant, fine-tuning method (Standard/LoRA/QuantizationAware(QAT)), data source, and training params.
 3. **Dashboard:** Monitor training progress, metrics, logs, and system usage.
 4. **Inference:** Test your fine-tuned model interactively.
 
@@ -90,7 +90,7 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ## Training
 
-- **Methods:** Standard, LoRA, QuantizationAware
+- **Methods:** Standard, LoRA, QAT
 - **Variants:** Any Gemma model supported by `gemma.gm.nn`
 - **Checkpoints:** Automatic, with recovery and cleanup
 
@@ -108,7 +108,7 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 - **Training stuck:** Check GPU, dataset, logs
 - **UI unresponsive:** Refresh browser, restart Streamlit
-- **OOM:** Lower batch size, use LoRA or QuantizationAware
+- **OOM:** Lower batch size, use LoRA or QAT
 - **Orphaned processes:** Use UI reset, check for stale lock files
 
 ---
@@ -167,8 +167,3 @@ sequenceDiagram
 Apache 2.0. See [LICENSE](LICENSE).
 
 ---
-
-## Notes
-
-- No support for Windows native.
-- For bug reports or feature requests, use GitHub Issues.

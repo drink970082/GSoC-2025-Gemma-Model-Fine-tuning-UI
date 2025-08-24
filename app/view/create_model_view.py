@@ -54,6 +54,7 @@ def _handle_training_start(
         _reset_session_state()
         if training_service.start_training(training_config):
             st.session_state["view"] = "training_dashboard"
+            st.session_state["disabled"] = False
             st.rerun()
         else:
             st.error("Training failed to start. Please try again.")

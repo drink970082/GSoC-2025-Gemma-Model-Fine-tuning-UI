@@ -5,10 +5,14 @@ from services.training_service import TrainingService
 def show_welcome_modal(training_service: TrainingService) -> None:
     """The central navigation hub that adapts to the application's state."""
     st.title("Gemma Fine-Tuning")
-    
-    if training_service.is_training_running() == "RUNNING":
+    status = training_service.is_training_running()
+    if status == "RUNNING":
         _show_running_training_interface()
     else:
+        if status == "FAILED":
+            training_service.reset_training_state(delete_checkpoint=True)
+        elif status == "FINISHED":
+            training_service.reset_training_state(delete_checkpoint=False)
         _show_main_navigation_interface()
     
     _show_abort_confirmation_dialog(training_service)

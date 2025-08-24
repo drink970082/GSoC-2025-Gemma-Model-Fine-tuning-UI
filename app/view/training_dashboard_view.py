@@ -1,4 +1,5 @@
 import streamlit as st
+
 from app.components.training_dashboard.control_panel import (
     display_control_panel,
 )

@@ -2,8 +2,8 @@ import os
 import time
 from typing import Any, Dict, Literal, Optional, Tuple
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 from backend.manager.process_manager import ProcessManager
 from backend.manager.system_manager import SystemManager
@@ -73,19 +73,13 @@ class TrainingService:
             self.process_manager.force_cleanup()
             st.success("Cleanup complete. The application is now ready.")
             time.sleep(2)
-            return "IDLE"
-
-        # Handle finished training
-        if status == "FINISHED":
-            self.process_manager.reset_state()
-            return "FINISHED"
-
-        # Handle failed training
-        if status == "FAILED":
-            self.process_manager.reset_state(delete_checkpoint=True)
-            return "FAILED"
+            status = "IDLE"
 
         return status
+
+    def reset_training_state(self, delete_checkpoint=False) -> None:
+        """Explicitly reset training state - call this when user wants to start over."""
+        self.process_manager.reset_state(delete_checkpoint=delete_checkpoint)
 
     def get_training_config(self) -> Optional[TrainingConfig]:
         """Retrieve the training configuration for the current training run."""

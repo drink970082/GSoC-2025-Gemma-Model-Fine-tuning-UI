@@ -89,6 +89,7 @@ def _get_source_config(data_source: str) -> Tuple[str, str, Optional[str], str]:
             "TensorFlow Dataset Name",
             placeholder="e.g., mtnt, mtnt/en-fr",
             key="dataset_name_input",
+            value="mtnt",
         )
         split = st.text_input(
             "Split",
@@ -171,6 +172,7 @@ def _get_seq2seq_config() -> Dict[str, Any]:
                 "Source Field Name",
                 help="Field name for source text (prompt) in the dataset",
                 key="prompt_field_input",
+                value="src",
             )
             max_length = st.number_input(
                 "Maximum Sequence Length",
@@ -179,6 +181,7 @@ def _get_seq2seq_config() -> Dict[str, Any]:
                 value=DEFAULT_SEQ_LENGTH,
                 help="Maximum length of input sequences",
                 key="max_length_input",
+                
             )
 
         with col2:
@@ -186,6 +189,7 @@ def _get_seq2seq_config() -> Dict[str, Any]:
                 "Target Field Name",
                 help="Field name for target text (response) in the dataset",
                 key="response_field_input",
+                value="dst",
             )
             truncate = st.checkbox(
                 "Truncate Long Sequences",

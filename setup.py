@@ -6,7 +6,7 @@ setup(
     description="A UI for fine-tuning Gemma models",
     author="Chen-Hao Wu",
     author_email="howdywu@gmail.com",
-    packages=find_packages(),
+    packages=find_packages(include=['app', 'app.*', 'services', 'services.*', 'config', 'config.*', 'backend', 'backend.*']),
     install_requires=[
         "streamlit",
         "pandas",
@@ -15,6 +15,7 @@ setup(
         "requests",
         "gemma",
         "datasets",
+        "pynvml",
     ],
     python_requires=">=3.8",
 )

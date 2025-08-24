@@ -4,8 +4,8 @@ from app.view.create_model_view import show_create_model_view
 from app.view.inference_view import show_inference_view
 from app.view.training_dashboard_view import show_training_dashboard_view
 from app.view.welcome_view import show_welcome_modal
+from config.dataclass import DataConfig, ModelConfig, TrainingConfig
 from services.di_container import get_service
-from config.dataclass import TrainingConfig, DataConfig, ModelConfig
 
 
 def _initialize_session_state() -> None:
@@ -26,6 +26,10 @@ def _initialize_session_state() -> None:
         st.session_state.frozen_log = "No logs available."
     if "frozen_training_metrics" not in st.session_state:
         st.session_state.frozen_training_metrics = {}
+    if "validation_passed" not in st.session_state:
+        st.session_state.validation_passed = False
+    if "validation_error" not in st.session_state:
+        st.session_state.validation_error = ""
 
 
 def default_config() -> TrainingConfig:
@@ -72,7 +76,9 @@ def main() -> None:
     # Sidebar for navigation
     with st.sidebar:
         st.header("Navigation")
-        if st.button("Back to Home", use_container_width=True, key="back_to_home"):
+        if st.button(
+            "Back to Home", use_container_width=True, key="back_to_home"
+        ):
             st.session_state.view = "welcome"
             st.rerun()
 
