@@ -2,11 +2,11 @@
 
 A modular interface for fine-tuning Google DeepMind’s Gemma language models. Supports real-time monitoring, multi-source data pipelines, and both standard and LoRA fine-tuning.
 
-This is the repo for Google Summer of Code 2025.
-Contributor Name: Chen-Hao (Howard) Wu (howdywu@gmail.com)
-Organization: Google DeepMind
-Mentors: Paige Bailey
-Project Name: Gemma Fine-Tuning UI
+This is the repo for Google Summer of Code 2025.  
+Contributor Name: Chen-Hao (Howard) Wu (howdywu@gmail.com)  
+Organization: Google DeepMind  
+Mentors: Paige Bailey  
+Project Name: Gemma Fine-Tuning UI  
 
 ---
 
