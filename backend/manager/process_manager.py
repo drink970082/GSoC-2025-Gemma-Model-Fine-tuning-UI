@@ -5,12 +5,13 @@ import signal
 import subprocess
 import time
 from dataclasses import asdict
-from typing import Literal, Optional, Tuple, Any, TextIO
+from typing import Any, Literal, Optional, TextIO, Tuple
+
 import streamlit as st
 
 from backend.manager.base_manager import BaseManager
 from backend.manager.training_state_manager import TrainingStateManager
-from config.app_config import get_config, TrainingStatus
+from config.app_config import TrainingStatus, get_config
 from config.dataclass import ModelConfig, TrainingConfig
 
 config = get_config()
@@ -37,7 +38,6 @@ class ProcessManager(BaseManager):
     def cleanup(self) -> None:
         """Cleanup method called by atexit."""
         self.terminate_process(mode="force", delete_checkpoint=True)
-        self.training_state_manager.mark_idle()
 
     def update_config(self, training_config: TrainingConfig) -> None:
         """Update the training configuration."""
@@ -198,7 +198,6 @@ class ProcessManager(BaseManager):
         self.app_config = None
         self.work_dir = None
         self.training_state_manager.cleanup()
-        self.training_state_manager.mark_idle()
 
     def set_work_dir(self, work_dir: Optional[str]) -> None:
         """Set the work directory and derive file paths."""
@@ -265,7 +264,7 @@ class ProcessManager(BaseManager):
                 self.training_state_manager.mark_finished(
                     time.strftime("%Y-%m-%dT%H:%M:%S")
                 )
-                
+
                 return TrainingStatus.FINISHED.value
             else:
                 error_msg = (

@@ -10,20 +10,25 @@ config = get_config()
 
 
 def _create_shutdown_button(
-    label: str, training_service: TrainingService
+    label: str, training_service: TrainingService, delete_checkpoint: bool = False
 ) -> None:
-    """Create a shutdown button with graceful/forceful fallback."""
-    if st.button(label, type="primary", use_container_width=True):
+    """Create a shutdown button with graceful/forceful fallback.""" 
+    if st.button(
+        label,
+        type="primary",
+        use_container_width=True,
+        key="shutdown_training",
+    ):
         with st.spinner(
             "Waiting for processes to terminate...", show_time=True
         ):
+            training_service.reset_training_state(delete_checkpoint=delete_checkpoint)
             shutdown_ok = training_service.stop_training()
             if not shutdown_ok:
                 st.info(
                     "Graceful shutdown failed. Attempting forceful shutdown..."
                 )
                 shutdown_ok = training_service.stop_training(mode="force")
-
         if shutdown_ok:
             st.success("All processes have been shut down.")
             st.session_state.session_started_by_app = False
@@ -43,11 +48,16 @@ def _create_next_step_buttons() -> None:
             "Go to Inference Playground",
             use_container_width=True,
             type="primary",
+            key="go_to_inference",
         ):
             st.session_state.view = "inference"
             st.rerun()
     with col2:
-        if st.button("Create New Model", use_container_width=True):
+        if st.button(
+            "Create New Model",
+            use_container_width=True,
+            key="create_new_model",
+        ):
             st.session_state.view = "create_model"
             st.rerun()
 
@@ -73,7 +83,11 @@ def display_control_panel(training_service: TrainingService) -> None:
 
     if st.session_state.abort_training:
         st.info("Training aborted. Please reset the application.")
-        if st.button("Go to Welcome Page", use_container_width=True):
+        if st.button(
+            "Go to Welcome Page",
+            use_container_width=True,
+            key="go_to_welcome",
+        ):
             st.session_state.view = "welcome"
             st.rerun()
         return
@@ -83,15 +97,16 @@ def display_control_panel(training_service: TrainingService) -> None:
     else:
         latest_checkpoint = _find_latest_checkpoint()
         if training_status == "FAILED":
-            st.error("Training Failed")
-            _create_shutdown_button("Reset Application", training_service)
+            st.error("Training failed, please reset the application.")
+            _create_shutdown_button("Reset Application", training_service, delete_checkpoint=True)
         elif latest_checkpoint is None:
             st.warning(
                 "Training finished but no checkpoint found. Please create a new model."
             )
-            _create_shutdown_button("Reset Application", training_service)
+            _create_shutdown_button("Reset Application", training_service, delete_checkpoint=False)
         else:
             st.success(
                 f"Training concluded successfully. Latest checkpoint found: {latest_checkpoint.name}"
             )
+            training_service.reset_training_state(delete_checkpoint=False)
             _create_next_step_buttons()

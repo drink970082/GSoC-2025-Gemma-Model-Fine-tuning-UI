@@ -2,13 +2,11 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Optional, Tuple, List
-
-from gemma import gm
+from typing import Any, Optional, List
 
 from backend.core.model import Model
 from config.app_config import get_config
-from config.dataclass import DpoParams, LoraParams, ModelConfig, TrainingConfig
+from config.dataclass import LoraParams, ModelConfig
 
 config = get_config()
 
@@ -23,8 +21,8 @@ class Inferencer:
     def __init__(self, work_dir: Optional[str] = None) -> None:
         self.model: Optional[Any] = None
         self.params: Optional[Any] = None
-        self.tokenizer: Optional[gm.text.Gemma3Tokenizer] = None
-        self.sampler: Optional[gm.text.ChatSampler] = None
+        self.tokenizer: Optional[Any] = None
+        self.sampler: Optional[Any] = None
         self._loaded: bool = False
         self.work_dir: str = work_dir or config.CHECKPOINT_FOLDER
 
@@ -40,7 +38,6 @@ class Inferencer:
     def get_latest_checkpoint(self) -> Optional[str]:
         """Return the path of the most recently created checkpoint directory."""
         checkpoints = self.list_checkpoints()
-        print(checkpoints)
         return checkpoints[0] if checkpoints else None
 
     def delete_checkpoint(self, checkpoint_name: str) -> bool:
@@ -67,20 +64,21 @@ class Inferencer:
             return False
 
         try:
-            # Load trained parameters
-            self.params = Model.load_trained_params(
-                self._get_checkpoint_path(full_checkpoint_path)
-            )
-
             # Load model configuration
             config_file = os.path.join(full_checkpoint_path, MODEL_CONFIG_FILE)
             with open(config_file, "r") as f:
                 model_config = self._parse_model_config(json.load(f))
 
+            # Load trained parameters
+            self.params = Model.load_trained_params(
+                self._get_checkpoint_path(full_checkpoint_path), method=model_config.method
+            )
+
             # Create model
             self.model = self._create_model_from_config(model_config)
 
             # Create tokenizer and sampler
+            from gemma import gm
             self.tokenizer = gm.text.Gemma3Tokenizer()
             self.sampler = gm.text.ChatSampler(
                 model=self.model, params=self.params, tokenizer=self.tokenizer
@@ -104,15 +102,6 @@ class Inferencer:
             raise RuntimeError("Model not loaded. Call load_model() first.")
 
         return self.sampler.chat(prompt)
-
-    def get_tokenizer(self) -> Optional[gm.text.Gemma3Tokenizer]:
-        """Get the tokenizer if loaded."""
-        return self.tokenizer if self._loaded else None
-
-    def get_sampler(self) -> Optional[gm.text.ChatSampler]:
-        """Get the sampler if loaded."""
-        return self.sampler if self._loaded else None
-
     def count_tokens(self, text: str) -> int:
         """Count tokens in text using the loaded tokenizer."""
         if not self._loaded or not self.tokenizer:
@@ -140,9 +129,6 @@ class Inferencer:
             method = model_config_dict["method"]
             if method == "LoRA":
                 parameters = LoraParams(**model_config_dict["parameters"])
-            elif method == "DPO":
-                parameters = DpoParams(**model_config_dict["parameters"])
-
         return ModelConfig(
             model_variant=model_config_dict["model_variant"],
             epochs=model_config_dict["epochs"],
@@ -157,5 +143,8 @@ class Inferencer:
             return Model.create_lora_model(
                 model_config.model_variant, model_config.parameters.lora_rank
             )
+        elif model_config.method == "QuantizationAware":
+            return Model.create_quantization_aware_model_inference(model_config.model_variant)
         else:
             return Model.create_standard_model(model_config.model_variant)
+

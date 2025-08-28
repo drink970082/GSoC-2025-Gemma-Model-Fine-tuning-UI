@@ -2,13 +2,7 @@ import sys
 
 from backend.core.trainer import ModelTrainer
 from backend.utils.cli import create_parser
-from config.dataclass import (
-    TrainingConfig,
-    ModelConfig,
-    DataConfig,
-    LoraParams,
-    DpoParams,
-)
+from config.dataclass import DataConfig, LoraParams, ModelConfig, TrainingConfig
 
 
 def parse_config(config: dict) -> TrainingConfig:
@@ -18,8 +12,6 @@ def parse_config(config: dict) -> TrainingConfig:
     if model_config_dict.get("parameters"):
         if model_config_dict["method"] == "LoRA":
             parameters = LoraParams(**model_config_dict["parameters"])
-        elif model_config_dict["method"] == "DPO":
-            parameters = DpoParams(**model_config_dict["parameters"])
     model_config = ModelConfig(
         model_variant=model_config_dict["model_variant"],
         epochs=model_config_dict["epochs"],
@@ -48,6 +40,8 @@ def main() -> None:
         work_dir = args.work_dir
         trainer = ModelTrainer(training_config, work_dir)
         trainer.train()
+        print("trainer_main.py: Script execution completed.")
+        sys.exit(0)
     except ValueError as e:
         print(f"trainer_main.py: Configuration error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -57,9 +51,6 @@ def main() -> None:
             file=sys.stderr,
         )
         sys.exit(1)
-    finally:
-        print("trainer_main.py: Script execution completed.")
-        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -1,72 +1,78 @@
 FINE_TUNING_METHODS = {
     "Standard": {
-        "description": "Full fine-tuning of all model parameters",
+        "description": "Full fine-tuning of all model parameters for maximum adaptation and performance.",
         "advantages": [
-            "Best performance potential",
-            "Complete model adaptation",
-            "No architectural changes",
+            "Best possible accuracy",
+            "Complete control over model behavior",
         ],
         "disadvantages": [
-            "Requires more GPU memory",
-            "Longer training time",
-            "Higher computational cost",
+            "High GPU memory and compute requirements",
+            "Slower training",
         ],
         "best_for": [
-            "When you have sufficient computational resources",
-            "When maximum performance is required",
-            "When you need to modify the entire model",
+            "When you need the highest accuracy",
+            "When resources are not a constraint",
         ],
+        "memory_usage": "High",
+        "training_speed": "Fast",
+        "use_case": "Full adaptation",
+        "default_parameters": {
+            "epochs": 300,
+            "learning_rate": 1e-3,
+        },
     },
     "LoRA": {
-        "description": "Low-Rank Adaptation: Efficient fine-tuning method that adds small trainable rank decomposition matrices",
+        "description": "Parameter-efficient fine-tuning using low-rank adapters for faster, lighter training.",
         "parameters": {
             "lora_rank": {
                 "description": "Rank of the LoRA update matrices",
                 "range": "1-32",
                 "default": 4,
-                "effect": "Higher rank = more capacity but more parameters",
+                "effect": "Higher rank = more capacity, more parameters",
             },
         },
         "advantages": [
             "Much lower memory usage",
-            "Faster training",
-            "Can be merged with base model",
-            "Parameter efficient",
+            "Faster and cheaper to train",
+            "Easy to store multiple fine-tuned variants",
         ],
         "disadvantages": [
-            "Slightly lower performance than full fine-tuning",
-            "Limited adaptation capacity",
+            "Slightly less accurate than full fine-tuning",
+            "Limited flexibility",
         ],
         "best_for": [
             "Limited GPU memory",
-            "Quick experiments",
-            "When you need to save multiple fine-tuned versions",
+            "Rapid prototyping",
         ],
-    },
-    "DPO": {
-        "description": "Direct Preference Optimization: Fine-tunes model based on human preferences",
-        "parameters": {
-            "dpo_beta": {
-                "description": "Temperature parameter for DPO",
-                "range": "0.1-1.0",
-                "default": 0.1,
-                "effect": "Higher beta = more exploration",
-            }
+        "memory_usage": "Low",
+        "training_speed": "Medium",
+        "use_case": "Parameter-efficient",
+        "default_parameters": {
+            "epochs": 500,
+            "learning_rate": 5e-3,
         },
+    },
+    "QuantizationAware": {
+        "description": "Trains the model to be robust to quantization, enabling efficient deployment on edge devices.",
         "advantages": [
-            "Better alignment with human preferences",
-            "Can improve model behavior",
-            "More controlled outputs",
+            "Smallest model size",
+            "Fastest inference",
+            "Best for mobile/edge deployment",
         ],
         "disadvantages": [
-            "Requires preference data",
-            "More complex training process",
-            "May need more iterations",
+            "Slightly more complex training",
+            "May lose some accuracy",
         ],
         "best_for": [
-            "When you have preference data",
-            "When you need to align model with specific behaviors",
-            "When you want to improve model outputs",
+            "Deploying to resource-constrained hardware",
+            "When model size and speed are critical",
         ],
+        "memory_usage": "Very Low",
+        "training_speed": "Slow",
+        "use_case": "Resource-constrained",
+        "default_parameters": {
+            "epochs": 1000,
+            "learning_rate": 5e-3,
+        },
     },
 }

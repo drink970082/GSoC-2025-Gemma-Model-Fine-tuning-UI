@@ -4,8 +4,8 @@ from app.view.create_model_view import show_create_model_view
 from app.view.inference_view import show_inference_view
 from app.view.training_dashboard_view import show_training_dashboard_view
 from app.view.welcome_view import show_welcome_modal
+from config.dataclass import DataConfig, ModelConfig, TrainingConfig
 from services.di_container import get_service
-from config.dataclass import TrainingConfig, DataConfig, ModelConfig
 
 
 def _initialize_session_state() -> None:
@@ -14,6 +14,8 @@ def _initialize_session_state() -> None:
         st.session_state.view = "welcome"
     if "session_started_by_app" not in st.session_state:
         st.session_state.session_started_by_app = False
+    if "abort_confirmation" not in st.session_state:
+        st.session_state.abort_confirmation = False
     if "abort_training" not in st.session_state:
         st.session_state.abort_training = False
     if "inferencer" not in st.session_state:
@@ -24,6 +26,10 @@ def _initialize_session_state() -> None:
         st.session_state.frozen_log = "No logs available."
     if "frozen_training_metrics" not in st.session_state:
         st.session_state.frozen_training_metrics = {}
+    if "validation_passed" not in st.session_state:
+        st.session_state.validation_passed = False
+    if "validation_error" not in st.session_state:
+        st.session_state.validation_error = ""
 
 
 def default_config() -> TrainingConfig:
@@ -47,8 +53,9 @@ def default_config() -> TrainingConfig:
             epochs=1,
             learning_rate=1e-4,
             method="Standard",
-        )
+        ),
     )
+
 
 # --- Main Application ---
 def main() -> None:
@@ -69,7 +76,9 @@ def main() -> None:
     # Sidebar for navigation
     with st.sidebar:
         st.header("Navigation")
-        if st.button("Back to Home", use_container_width=True):
+        if st.button(
+            "Back to Home", use_container_width=True, key="back_to_home"
+        ):
             st.session_state.view = "welcome"
             st.rerun()
 
