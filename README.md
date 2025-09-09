@@ -148,6 +148,13 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
+## Screenshots
+<img alt="create" src="https://github.com/user-attachments/assets/85eda935-2f8b-42c2-9ef8-8840fa94b046" />
+<img alt="dashboard" src="https://github.com/user-attachments/assets/51992dba-0433-439e-a848-daea201a5ba0" />
+
+
+---
+
 ## System Architecture
 ```mermaid
 flowchart LR
